@@ -65,7 +65,7 @@ public class WPOSLookupProduct extends AutoComplete implements EventListener {
     private String priceListTile       = StringUtils.trunc(Msg.parseTranslation(Env.getCtx() , "@PriceList@")    + fill , QUANTITY_LENGTH );
     private String title = "";
 
-    private ArrayList<Integer> recordId;
+    private ArrayList<Integer> recordId = new ArrayList<Integer>();
     private int productId = -1;
     
 

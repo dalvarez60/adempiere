@@ -67,6 +67,7 @@ import org.compiere.model.MWarehouse;
 import org.compiere.model.Query;
 import org.compiere.model.X_C_Order;
 import org.compiere.process.DocAction;
+import org.compiere.process.InOutGenerateAbstract;
 import org.compiere.process.ProcessInfo;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
@@ -366,6 +367,18 @@ public class CPOS {
 		}
 		//	
 		return MOrder.DocSubTypeSO_Standard.equals(getDocSubTypeSO());
+	}
+	
+	/**
+	 * Pre-Invoiced Order
+	 * @return
+	 */
+	public boolean isPreInvoicedOrder() {
+		if(!hasOrder()) {
+			return false;
+		}
+		//	
+		return MOrder.DocSubTypeSO_Pre_Invoiced.equals(getDocSubTypeSO());
 	}
 	
 	/**
@@ -1298,7 +1311,9 @@ public class CPOS {
 		//	Load after process
 		reloadOrder();
 		//	Validate for Invoice and Shipment generation (not for Standard Orders)
-		if(isPaid && !isStandardOrder()) {
+		if(isPaid 
+				&& !isStandardOrder() 
+				&& !isPreInvoicedOrder()) {
 			if(!isDelivered()) // Based on Delivery Rule of POS Terminal or partner
 				generateShipment(trxName);
 
@@ -1324,7 +1339,7 @@ public class CPOS {
 		//Generate Return using InOutGenerate
 		ProcessInfo processInfo = ProcessBuilder
 				.create(getCtx())
-				.process(199)
+				.process(InOutGenerateAbstract.getProcessId())
 				.withTitle(Msg.parseTranslation(getCtx(), "@InOutGenerateGen@"))
 				.withParameter(MInOut.COLUMNNAME_M_Warehouse_ID, getM_Warehouse_ID())
 				.withParameter("Selection", true)
