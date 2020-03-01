@@ -16,28 +16,25 @@
 
 package org.adempiere.pos.process;
 
-import org.adempiere.pos.AdempierePOSException;
-import org.compiere.model.MDocType;
-import org.compiere.model.MInOut;
-import org.compiere.model.MInOutConfirm;
-import org.compiere.model.MInOutLine;
-import org.compiere.model.MInOutLineConfirm;
-import org.compiere.model.MInvoice;
-import org.compiere.model.MOrder;
-import org.compiere.model.MPayment;
-import org.compiere.model.MRMA;
-import org.compiere.model.MRMALine;
-import org.compiere.model.PO;
-import org.compiere.model.Query;
-import org.compiere.model.X_M_RMAType;
-import org.compiere.process.DocAction;
-import org.compiere.process.ProcessInfo;
-import org.compiere.util.Msg;
-import org.eevolution.service.dsl.ProcessBuilder;
-
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+
+import org.compiere.model.I_C_Order;
+import org.compiere.model.I_M_InOut;
+import org.compiere.model.MDocType;
+import org.compiere.model.MInOut;
+import org.compiere.model.MOrder;
+import org.compiere.model.MPayment;
+import org.compiere.model.PO;
+import org.compiere.process.DocAction;
+import org.compiere.process.InOutGenerate;
+import org.compiere.process.InvoiceGenerate;
+import org.compiere.process.ProcessInfo;
+import org.eevolution.service.dsl.ProcessBuilder;
+import org.spin.process.OrderRMACreateFrom;
 
 
 /**
@@ -62,143 +59,96 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
         today = new Timestamp(System.currentTimeMillis());
         // Get Order
         MOrder sourceOrder = new MOrder(getCtx(), getOrderId(), get_TrxName());
-        // Get Invoices for ths order
-        MInOut[] shipments = sourceOrder.getShipments();
-        // If not exist invoice then only is necessary reverse shipment
-        if (shipments.length > 0) {
-            // Validate if partner not is POS partner standard then reverse shipment
+        ProcessInfo processInformation = ProcessBuilder
+        	.create(getCtx())
+        	.process(CreateOrderBasedOnAnother.getProcessId())
+        	.withTitle(CreateOrderBasedOnAnother.getProcessName())
+        	.withParameter(CreateOrderBasedOnAnother.C_OrderSource_ID, getOrderId())
+        	.withParameter(CreateOrderBasedOnAnother.Bill_BPartner_ID, sourceOrder.getC_BPartner_ID())
+        	.withParameter(CreateOrderBasedOnAnother.DocSubTypeSO , MDocType.DOCSUBTYPESO_ReturnMaterial)
+        	.withParameter(CreateOrderBasedOnAnother.DocAction, DocAction.ACTION_None)
+        	.withParameter(CreateOrderBasedOnAnother.IsIncludePayments, false)
+        	.withParameter(CreateOrderBasedOnAnother.IsAllocated, false)
+        	.withoutTransactionClose()
+        	.execute(get_TrxName());
+        //	
+        if(processInformation.getRecord_ID() != 0) {
+        	MOrder returnOrder = new MOrder(getCtx(), processInformation.getRecord_ID(), get_TrxName());
+            // Get Invoices for ths order
+            List<MInOut> shipments = Arrays.asList(sourceOrder.getShipments());
+            // If not exist invoice then only is necessary reverse shipment
+            if (shipments.size() > 0) {
+                // Validate if partner not is POS partner standard then reverse shipment
+                if (sourceOrder.getC_BPartner_ID() != getInvoicePartnerId() || isCancelled()) {
+                    List<Integer> selectedRecordsIds = new ArrayList<>();
+                	ProcessBuilder builder = ProcessBuilder
+                    	.create(getCtx())
+                    	.process(OrderRMACreateFrom.getProcessId())
+                    	.withRecordId(I_C_Order.Table_ID, returnOrder.getC_Order_ID());
+                	//	
+                	LinkedHashMap<Integer, LinkedHashMap<String, Object>> selection = new LinkedHashMap<>();
+                	shipments.forEach(sourceShipment -> {
+                		LinkedHashMap<String, Object> selectionValues = new LinkedHashMap<String, Object>();
+                		//	Add values
+                		Arrays.asList(sourceShipment.getLines())
+                			.forEach(sourceShipmentLine -> {
+                				selectionValues.put("CF_M_Product_ID", sourceShipmentLine.getM_Product_ID());
+                	    		selectionValues.put("CF_C_Charge_ID", sourceShipmentLine.getC_Charge_ID());
+                	    		selectionValues.put("CF_C_UOM_ID", sourceShipmentLine.getC_UOM_ID());
+                			});
+                		selection.put(sourceShipment.getM_InOut_ID(), selectionValues);
+                	});
+                	//	
+                	builder.withSelectedRecordsIds(I_M_InOut.Table_ID, selectedRecordsIds, selection)
+                		.withoutTransactionClose()
+                		.execute(get_TrxName());
+                }
+            }
+            //	Process return Order
+            if(!returnOrder.processIt(DocAction.ACTION_Complete)) {
+            	return returnOrder.getProcessMsg();
+            }
+            //	Save if is ok
+            returnOrder.saveEx();
+            //	Generate Invoice
             if (sourceOrder.getC_BPartner_ID() != getInvoicePartnerId() || isCancelled()) {
-                cancelShipments(shipments);
+            	ProcessBuilder
+                    	.create(getCtx())
+                    	.process(InvoiceGenerate.getProcessId())
+                    	.withTitle(InvoiceGenerate.getProcessName())
+                    	.withParameter(InvoiceGenerate.AD_ORG_ID, sourceOrder.getAD_Org_ID())
+                    	.withParameter(InvoiceGenerate.C_ORDER_ID, returnOrder.getC_Order_ID())
+                    	.withoutTransactionClose()
+                    	.execute(get_TrxName());
+            }
+            //	Generate Return
+            if (sourceOrder.getC_BPartner_ID() != getInvoicePartnerId() || isCancelled()) {
+            	ProcessBuilder
+                    	.create(getCtx())
+                    	.process(InOutGenerate.getProcessId())
+                    	.withTitle(InOutGenerate.getProcessName())
+                    	.withParameter(InOutGenerate.M_WAREHOUSE_ID, sourceOrder.getM_Warehouse_ID())
+                    	.withSelectedRecordsIds(I_C_Order.Table_ID, Arrays.asList(returnOrder.getC_Order_ID()))
+                    	.withoutTransactionClose()
+                    	.execute(get_TrxName());
             }
         }
-        MInvoice[] invoices = sourceOrder.getInvoices();
-        if(invoices.length > 0)
-        {
-            if (sourceOrder.getC_BPartner_ID() != getInvoicePartnerId() || isCancelled())
-                cancelInvoices();
-        }
-
         //Cancel original payment
-        for (MPayment payment :cancelPayments(sourceOrder, today))
-             addLog(payment.getDocumentInfo());
-
+        for (MPayment payment :cancelPayments(sourceOrder, today)) {
+        	addLog(payment.getDocumentInfo());
+        }
         sourceOrder.processIt(DocAction.ACTION_Close);
         sourceOrder.saveEx();
         return "@Ok@";
     }
 
-    private void cancelShipments( MInOut[] sourceShipments)
-    {
-        for (MInOut sourceShipment : sourceShipments) {
-            MRMA rma = new MRMA(getCtx(), 0 , get_TrxName());
-            rma.setM_InOut_ID(sourceShipment.getM_InOut_ID());
-            rma.setAD_Org_ID(sourceShipment.getAD_Org_ID());
-            rma.setM_RMAType_ID(getRMATypeId());
-            rma.setC_BPartner_ID(sourceShipment.getC_BPartner_ID());
-            rma.setName(sourceShipment.getDocumentInfo());
-            rma.setIsSOTrx(true);
-            rma.setSalesRep_ID(sourceShipment.getSalesRep_ID());
-            rma.setC_DocType_ID(MDocType.getDocTypeBaseOnSubType(sourceShipment.getAD_Org_ID() , MDocType.DOCBASETYPE_SalesOrder , MDocType.DOCSUBTYPESO_ReturnMaterial));
-            rma.setDocStatus(DocAction.STATUS_Drafted);
-            rma.setDocAction(DocAction.ACTION_Complete);
-            rma.saveEx();
-
-            MInOut customerReturn = new MInOut(getCtx() , 0 , get_TrxName());
-            PO.copyValues(sourceShipment, customerReturn);
-            customerReturn.setDocumentNo(null);
-            customerReturn.setM_RMA_ID(rma.getM_RMA_ID());
-            customerReturn.setIsSOTrx(true);
-            customerReturn.setC_BPartner_ID(sourceShipment.getC_BPartner_ID());
-            customerReturn.setC_Order_ID(-1);
-            for (MDocType documentType : MDocType.getOfDocBaseType(getCtx() , MDocType.DOCBASETYPE_MaterialReceipt))
-                if (documentType.isSOTrx())
-                    customerReturn.setC_DocType_ID();
-
-            customerReturn.setMovementType(MInOut.MOVEMENTTYPE_CustomerReturns);
-            customerReturn.setDocStatus(DocAction.STATUS_Drafted);
-            customerReturn.setDocAction(DocAction.ACTION_Complete);
-            customerReturn.setProcessed(false);
-            customerReturn.saveEx();
-
-            for (MInOutLine sourceShipmentLine : sourceShipment.getLines())
-            {
-                MRMALine rmaLine = new MRMALine(getCtx() , 0 , get_TrxName());
-                rmaLine.setM_RMA_ID(rma.getM_RMA_ID());
-                rmaLine.setAD_Org_ID(sourceShipmentLine.getAD_Org_ID());
-                rmaLine.setM_InOutLine_ID(sourceShipmentLine.getM_InOutLine_ID());
-                rmaLine.setQty(sourceShipmentLine.getMovementQty());
-                rmaLine.saveEx();
-
-                MInOutLine customerReturnLine = new MInOutLine(getCtx() , 0 , get_TrxName());
-                customerReturnLine.setM_InOut_ID(customerReturn.getM_InOut_ID());
-                customerReturnLine.setM_RMALine_ID(rmaLine.getM_RMALine_ID());
-                customerReturnLine.setM_Product_ID(rmaLine.getM_Product_ID());
-                customerReturnLine.setM_Locator_ID(sourceShipmentLine.getM_Locator_ID());
-                customerReturnLine.setMovementQty(rmaLine.getQty());
-                customerReturnLine.saveEx();
-            }
-
-            rma.processIt(DocAction.ACTION_Complete);
-            rma.saveEx();
-            addLog(rma.getDocumentInfo());
-
-            if (customerReturn.getC_DocType().isShipConfirm() && isShipReceiptConfirmation())
-            {
-                customerReturn.processIt(DocAction.STATUS_InProgress);
-                customerReturn.saveEx();
-
-                for (MInOutConfirm confirm : customerReturn.getConfirmations(true)) {
-                    for (MInOutLineConfirm confirmLine : confirm.getLines(true)) {
-                        confirmLine.setConfirmedQty(confirmLine.getTargetQty());
-                        confirmLine.saveEx();
-                    }
-
-                    confirm.processIt(DocAction.ACTION_Complete);
-                    confirm.saveEx();
-                    addLog(confirm.getDocumentInfo());
-                }
-            }
-
-            customerReturn.processIt(DocAction.STATUS_Completed);
-            customerReturn.saveEx();
-            addLog(customerReturn.getDocumentInfo());
-
-            customerReturns.add(customerReturn);
-        }
-    }
-
-    private void cancelInvoices()
-    {
-        for (MInOut customerReturn : customerReturns) {
-            ProcessInfo processInfo = ProcessBuilder
-                    .create(getCtx())
-                    .process("M_InOut_CreateInvoice") // AD_Process_ID = 154
-                    .withTitle("Generate Invoice from Receipt")
-                    .withRecordId(MInOut.Table_ID , customerReturn.getM_InOut_ID())
-                    .withoutTransactionClose()
-                    .execute(get_TrxName());
-
-            if (processInfo.isError()) {
-                String errorMessage = Msg.parseTranslation(getCtx(), processInfo.getTitle() + " @ProcessRunError@ " + processInfo.getSummary() + " " + processInfo.getLogInfo());
-                throw new AdempierePOSException(errorMessage);
-            }
-
-            addLog(processInfo.getLogInfo());
-
-            for (MInvoice creditNote :  getCreditNotes(customerReturn.getM_RMA_ID())) {
-                if (creditNote != null && creditNote.getC_Invoice_ID() > 0) {
-                    creditNote.setDateInvoiced(today);
-                    creditNote.setDateAcct(today);
-                    creditNote.processIt(DocAction.ACTION_Complete);
-                    creditNote.saveEx();
-                    addLog(creditNote.getDocumentInfo());
-                }
-            }
-        }
-    }
-
-    static public List<MPayment> cancelPayments(MOrder sourceOrder, Timestamp today)
-    {
+    /**
+     * Cancel Payments
+     * @param sourceOrder
+     * @param today
+     * @return
+     */
+    private List<MPayment> cancelPayments(MOrder sourceOrder, Timestamp today) {
         List<MPayment> payments = new ArrayList<>();
         List<MPayment> sourcePayments = MPayment.getOfOrder(sourceOrder);
         for (MPayment sourcePayment : sourcePayments)
@@ -221,28 +171,5 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
             payments.add(payment);
         }
         return payments;
-    }
-
-    /**
-     * Get RMA Type
-     * @return
-     */
-    public int getRMATypeId() {
-        return new Query(getCtx(), X_M_RMAType.Table_Name , null , get_TrxName())
-        	.setOnlyActiveRecords(true)
-        	.setOrderBy(X_M_RMAType.COLUMNNAME_Name)
-        	.setClient_ID()
-        	.firstId();
-    }
-
-    public List<MInvoice> getCreditNotes(int Id)
-    {
-        StringBuilder where = new StringBuilder();
-        where.append(MRMA.COLUMNNAME_M_RMA_ID).append("=?");
-        return new Query(getCtx() , MInvoice.Table_Name , where.toString() , get_TrxName())
-                .setClient_ID()
-                .setParameters(Id)
-                .list();
-
     }
 }
