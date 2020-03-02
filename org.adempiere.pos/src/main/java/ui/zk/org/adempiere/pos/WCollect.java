@@ -608,17 +608,10 @@ public class WCollect extends Collect implements WPOSKeyListener, EventListener,
 	 *  @return void
 	 */
 	public void printTicketWeb() {	
-		
-		try {
-			//print standard document
-			if (posPanel.isToPrint() && posPanel.hasOrder()) {
-				posPanel.printTicket();
-			}
+		//print standard document
+		if (posPanel.isToPrint() && posPanel.hasOrder()) {
+			posPanel.printTicket();
 		}
-			catch (Exception e) 
-			{
-				log.severe("PrintTicket - Error Printing Ticket");
-			}			  
 	}
 
 	/**

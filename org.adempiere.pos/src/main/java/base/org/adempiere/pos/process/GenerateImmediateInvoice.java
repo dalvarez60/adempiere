@@ -46,12 +46,12 @@ public class GenerateImmediateInvoice extends GenerateImmediateInvoiceAbstract i
                 .process(CreateOrderBasedOnAnother.getProcessId())
                 .withTitle(CreateOrderBasedOnAnother.getProcessName())
                 .withParentProcess(this)
-                .withParameter(CreateOrderBasedOnAnother.C_OrderSource_ID, order.get_ID())
-                .withParameter(CreateOrderBasedOnAnother.Bill_BPartner_ID , getInvoicePartnerId())
-                .withParameter(CreateOrderBasedOnAnother.DocSubTypeSO , getSOSubType())
-                .withParameter(CreateOrderBasedOnAnother.DocAction, DocAction.ACTION_Complete)
-                .withParameter(CreateOrderBasedOnAnother.IsIncludePayments, isIncludePayments())
-                .withParameter(CreateOrderBasedOnAnother.IsAllocated, isAllocated())
+                .withParameter(CreateOrderBasedOnAnother.C_ORDERSOURCE_ID, order.get_ID())
+                .withParameter(CreateOrderBasedOnAnother.BILL_BPARTNER_ID , getInvoicePartnerId())
+                .withParameter(CreateOrderBasedOnAnother.DOCSUBTYPESO , getSOSubType())
+                .withParameter(CreateOrderBasedOnAnother.DOCACTION, DocAction.ACTION_Complete)
+                .withParameter(CreateOrderBasedOnAnother.ISINCLUDEPAYMENTS, isIncludePayments())
+                .withParameter(CreateOrderBasedOnAnother.ISALLOCATED, isAllocated())
                 .withoutTransactionClose()
                 .execute(get_TrxName());
 
@@ -67,9 +67,9 @@ public class GenerateImmediateInvoice extends GenerateImmediateInvoiceAbstract i
                 .process(ReverseTheSalesTransaction.getProcessId())
                 .withTitle(ReverseTheSalesTransaction.getProcessName())
                 .withParentProcess(this)
-                .withParameter(ReverseTheSalesTransaction.C_Order_ID , order.get_ID())
-                .withParameter(ReverseTheSalesTransaction.Bill_BPartner_ID , getInvoicePartnerId())
-                .withParameter(ReverseTheSalesTransaction.IsShipConfirm, isipReceiptConfirmation())
+                .withParameter(ReverseTheSalesTransaction.C_ORDER_ID, order.get_ID())
+                .withParameter(ReverseTheSalesTransaction.BILL_BPARTNER_ID, getInvoicePartnerId())
+                .withParameter(ReverseTheSalesTransaction.ISSHIPCONFIRM, isipReceiptConfirmation())
                 .withoutTransactionClose()
                 .execute(get_TrxName());
 

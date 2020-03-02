@@ -47,7 +47,7 @@ import org.compiere.util.Env;
  */
 public class InOutGenerate extends InOutGenerateAbstract {
 	/**	The current Shipment	*/
-	private MInOut 		m_shipment = null;
+	private MInOut 		shipment = null;
 	/** Number of Shipments	being created	*/
 	private int			m_created = 0;
 	/**	Line Number				*/
@@ -151,9 +151,9 @@ public class InOutGenerate extends InOutGenerateAbstract {
 			counter.getAndIncrement();
 			//	New Header different Shipper, Shipment Location
 			if (!isConsolidateDocument() 
-				|| (m_shipment != null 
-				&& (m_shipment.getC_BPartner_Location_ID() != order.getC_BPartner_Location_ID()
-					|| m_shipment.getM_Shipper_ID() != order.getM_Shipper_ID() )))
+				|| (shipment != null 
+				&& (shipment.getC_BPartner_Location_ID() != order.getC_BPartner_Location_ID()
+					|| shipment.getM_Shipper_ID() != order.getM_Shipper_ID() )))
 				completeShipment();
 			log.fine("check: " + order + " - DeliveryRule=" + order.getDeliveryRule());
 			//
@@ -346,21 +346,21 @@ public class InOutGenerate extends InOutGenerateAbstract {
 			completeShipment();
 		m_lastC_BPartner_Location_ID = orderLine.getC_BPartner_Location_ID();
 		//	Create New Shipment
-		if (m_shipment == null)
+		if (shipment == null)
 		{
-			m_shipment = new MInOut (order, 0, getMovementDate());
-			m_shipment.setM_Warehouse_ID(orderLine.getM_Warehouse_ID());	//	sets Org too
+			shipment = new MInOut (order, 0, getMovementDate());
+			shipment.setM_Warehouse_ID(orderLine.getM_Warehouse_ID());	//	sets Org too
 			if (order.getC_BPartner_ID() != orderLine.getC_BPartner_ID())
-				m_shipment.setC_BPartner_ID(orderLine.getC_BPartner_ID());
+				shipment.setC_BPartner_ID(orderLine.getC_BPartner_ID());
 			if (order.getC_BPartner_Location_ID() != orderLine.getC_BPartner_Location_ID())
-				m_shipment.setC_BPartner_Location_ID(orderLine.getC_BPartner_Location_ID());
-			if (!m_shipment.save())
+				shipment.setC_BPartner_Location_ID(orderLine.getC_BPartner_Location_ID());
+			if (!shipment.save())
 				throw new IllegalStateException("Could not create Shipment");
 		}
 		//	Non Inventory Lines
 		if (storages == null)
 		{
-			MInOutLine line = new MInOutLine (m_shipment);
+			MInOutLine line = new MInOutLine (shipment);
 			line.setOrderLine(orderLine, 0, Env.ZERO);
 			line.setQty(qty);	//	Correct UOM
 			if (orderLine.getQtyEntered().compareTo(orderLine.getQtyOrdered()) != 0)
@@ -413,7 +413,7 @@ public class InOutGenerate extends InOutGenerateAbstract {
 			}
 			if (line == null)	//	new line
 			{
-				line = new MInOutLine (m_shipment);
+				line = new MInOutLine (shipment);
 				line.setOrderLine(orderLine, M_Locator_ID, order.isSOTrx() ? deliver : Env.ZERO);
 				line.setQty(deliver);
 				list.add(line);
@@ -443,7 +443,7 @@ public class InOutGenerate extends InOutGenerateAbstract {
 			else 
 			{
 				
-				 MInOutLine line = new MInOutLine (m_shipment);
+				 MInOutLine line = new MInOutLine (shipment);
 				 line.setOrderLine(orderLine, 0, order.isSOTrx() ? toDeliver : Env.ZERO);
 				 line.setQty(toDeliver);
 			     if (!line.save())
@@ -490,14 +490,15 @@ public class InOutGenerate extends InOutGenerateAbstract {
 	 */
 	private void completeShipment()
 	{
-		if (m_shipment != null)
+		if (shipment != null)
 		{
 			//	Fails if there is a confirmation
-			if (!m_shipment.processIt(getDocAction()))
-				log.warning("Failed: " + m_shipment);
-			m_shipment.saveEx();
+			if (!shipment.processIt(getDocAction()))
+				log.warning("Failed: " + shipment);
+			shipment.saveEx();
 			//
-			addLog(m_shipment.getM_InOut_ID(), m_shipment.getMovementDate(), null, m_shipment.getDocumentNo());
+			addLog(shipment.getM_InOut_ID(), shipment.getMovementDate(), null, shipment.getDocumentNo());
+			getProcessInfo().setRecord_ID(shipment.getM_InOut_ID());
 			m_created++;
 			
 			//reset storage cache as MInOut.completeIt will update m_storage
@@ -505,7 +506,7 @@ public class InOutGenerate extends InOutGenerateAbstract {
 			m_lastPP = null;
 			m_lastStorages = null;
 		}
-		m_shipment = null;
+		shipment = null;
 		m_line = 0;
 	}	//	completeOrder
 	

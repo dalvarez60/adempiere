@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Migrations>
+  <Migration EntityType="D" Name="Add some translation for POS" ReleaseNo="3.9.4" SeqNo="5640">
+    <Step SeqNo="10" StepType="AD">
+      <PO AD_Table_ID="109" Action="I" Record_ID="53653" Table="AD_Message">
+        <Data AD_Column_ID="588" Column="IsActive">true</Data>
+        <Data AD_Column_ID="589" Column="Created">2020-03-01 21:13:58.157</Data>
+        <Data AD_Column_ID="198" Column="MsgText">Reverse The Sales Transaction</Data>
+        <Data AD_Column_ID="591" Column="Updated">2020-03-01 21:13:58.157</Data>
+        <Data AD_Column_ID="197" Column="MsgType">I</Data>
+        <Data AD_Column_ID="6766" Column="Value">pos.reverse.sales.transaction</Data>
+        <Data AD_Column_ID="199" Column="MsgTip">This process allows reverse the sales transaction</Data>
+        <Data AD_Column_ID="392" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="391" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="7716" Column="EntityType">ECA02</Data>
+        <Data AD_Column_ID="6765" Column="AD_Message_ID">53653</Data>
+        <Data AD_Column_ID="590" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="592" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84346" Column="UUID">0d20ac91-dee3-4366-a0f0-9f7b40874983</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="20" StepType="AD">
+      <PO AD_Table_ID="119" Action="I" Record_ID="0" Table="AD_Message_Trl">
+        <Data AD_Column_ID="609" Column="Created">2020-03-01 21:13:59.209</Data>
+        <Data AD_Column_ID="611" Column="Updated">2020-03-01 21:13:59.209</Data>
+        <Data AD_Column_ID="608" Column="IsActive">true</Data>
+        <Data AD_Column_ID="344" Column="IsTranslated">false</Data>
+        <Data AD_Column_ID="342" Column="MsgText">Reverse The Sales Transaction</Data>
+        <Data AD_Column_ID="343" Column="MsgTip">This process allows reverse the sales transaction</Data>
+        <Data AD_Column_ID="1192" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="1193" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="610" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="341" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="6767" Column="AD_Message_ID">53653</Data>
+        <Data AD_Column_ID="612" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84347" Column="UUID">08acb01b-2cc7-4868-8b9e-3b8f68630683</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="30" StepType="AD">
+      <PO AD_Table_ID="119" Action="U" Record_ID="0" Table="AD_Message_Trl">
+        <Data AD_Column_ID="342" Column="MsgText" oldValue="Reverse The Sales Transaction">Anular Transacción de Venta</Data>
+        <Data AD_Column_ID="343" Column="MsgTip" oldValue="This process allows reverse the sales transaction">Este proceso permite revertir la transacción de venta</Data>
+        <Data AD_Column_ID="341" Column="AD_Language" oldValue="es_MX">es_MX</Data>
+        <Data AD_Column_ID="6767" Column="AD_Message_ID" oldValue="53653">53653</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="40" StepType="AD">
+      <PO AD_Table_ID="119" Action="U" Record_ID="0" Table="AD_Message_Trl">
+        <Data AD_Column_ID="342" Column="MsgText" oldValue="Nueva Orden devuelta de cliente">Nueva Orden de Devolución</Data>
+        <Data AD_Column_ID="341" Column="AD_Language" oldValue="es_MX">es_MX</Data>
+        <Data AD_Column_ID="6767" Column="AD_Message_ID" oldValue="52232">52232</Data>
+        <Data AD_Column_ID="84347" Column="UUID" isOldNull="true">aa0356a9-5441-4a0b-82d6-978f8f84bad1</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="50" StepType="AD">
+      <PO AD_Table_ID="109" Action="I" Record_ID="53654" Table="AD_Message">
+        <Data AD_Column_ID="392" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="391" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="7716" Column="EntityType">ECA02</Data>
+        <Data AD_Column_ID="6765" Column="AD_Message_ID">53654</Data>
+        <Data AD_Column_ID="590" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="592" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84346" Column="UUID">19f058e0-7cd5-4973-803f-e0f8b69e15a2</Data>
+        <Data AD_Column_ID="588" Column="IsActive">true</Data>
+        <Data AD_Column_ID="589" Column="Created">2020-03-01 21:15:35.973</Data>
+        <Data AD_Column_ID="198" Column="MsgText">Create Withdrawal</Data>
+        <Data AD_Column_ID="591" Column="Updated">2020-03-01 21:15:35.973</Data>
+        <Data AD_Column_ID="197" Column="MsgType">I</Data>
+        <Data AD_Column_ID="6766" Column="Value">pos.new.withdrawal</Data>
+        <Data AD_Column_ID="199" Column="MsgTip" isNewNull="true"/>
+      </PO>
+    </Step>
+    <Step SeqNo="60" StepType="AD">
+      <PO AD_Table_ID="119" Action="I" Record_ID="0" Table="AD_Message_Trl">
+        <Data AD_Column_ID="609" Column="Created">2020-03-01 21:15:36.992</Data>
+        <Data AD_Column_ID="611" Column="Updated">2020-03-01 21:15:36.992</Data>
+        <Data AD_Column_ID="608" Column="IsActive">true</Data>
+        <Data AD_Column_ID="344" Column="IsTranslated">false</Data>
+        <Data AD_Column_ID="342" Column="MsgText">Create Withdrawal</Data>
+        <Data AD_Column_ID="343" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="1192" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="1193" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="610" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="341" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="6767" Column="AD_Message_ID">53654</Data>
+        <Data AD_Column_ID="612" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84347" Column="UUID">1cf218e3-453f-431c-a0f8-eb770992d14f</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="70" StepType="AD">
+      <PO AD_Table_ID="119" Action="U" Record_ID="0" Table="AD_Message_Trl">
+        <Data AD_Column_ID="342" Column="MsgText" oldValue="Create Withdrawal">Crear Retiro de POS</Data>
+        <Data AD_Column_ID="341" Column="AD_Language" oldValue="es_MX">es_MX</Data>
+        <Data AD_Column_ID="6767" Column="AD_Message_ID" oldValue="53654">53654</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="80" StepType="AD">
+      <PO AD_Table_ID="109" Action="I" Record_ID="53655" Table="AD_Message">
+        <Data AD_Column_ID="588" Column="IsActive">true</Data>
+        <Data AD_Column_ID="589" Column="Created">2020-03-01 21:16:04.456</Data>
+        <Data AD_Column_ID="198" Column="MsgText">Close Cash</Data>
+        <Data AD_Column_ID="591" Column="Updated">2020-03-01 21:16:04.456</Data>
+        <Data AD_Column_ID="197" Column="MsgType">I</Data>
+        <Data AD_Column_ID="6766" Column="Value">pos.close.cash</Data>
+        <Data AD_Column_ID="199" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="392" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="391" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="7716" Column="EntityType">ECA02</Data>
+        <Data AD_Column_ID="6765" Column="AD_Message_ID">53655</Data>
+        <Data AD_Column_ID="590" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="592" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84346" Column="UUID">04cb4ded-6fec-482b-beac-ade839f2f9dc</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="90" StepType="AD">
+      <PO AD_Table_ID="119" Action="I" Record_ID="0" Table="AD_Message_Trl">
+        <Data AD_Column_ID="609" Column="Created">2020-03-01 21:16:05.525</Data>
+        <Data AD_Column_ID="611" Column="Updated">2020-03-01 21:16:05.525</Data>
+        <Data AD_Column_ID="608" Column="IsActive">true</Data>
+        <Data AD_Column_ID="344" Column="IsTranslated">false</Data>
+        <Data AD_Column_ID="342" Column="MsgText">Close Cash</Data>
+        <Data AD_Column_ID="343" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="1192" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="1193" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="610" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="341" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="6767" Column="AD_Message_ID">53655</Data>
+        <Data AD_Column_ID="612" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84347" Column="UUID">7f6945b9-615a-49aa-92d0-3e88a8c97ef3</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="100" StepType="AD">
+      <PO AD_Table_ID="119" Action="U" Record_ID="0" Table="AD_Message_Trl">
+        <Data AD_Column_ID="342" Column="MsgText" oldValue="Close Cash">Cerrar Caja</Data>
+        <Data AD_Column_ID="341" Column="AD_Language" oldValue="es_MX">es_MX</Data>
+        <Data AD_Column_ID="6767" Column="AD_Message_ID" oldValue="53655">53655</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="110" StepType="AD">
+      <PO AD_Table_ID="109" Action="U" Record_ID="53655" Table="AD_Message">
+        <Data AD_Column_ID="199" Column="MsgTip" isOldNull="true">Clase cash of POS</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="120" StepType="AD">
+      <PO AD_Table_ID="119" Action="U" Record_ID="0" Table="AD_Message_Trl">
+        <Data AD_Column_ID="343" Column="MsgTip" isOldNull="true">Cerrar Caja del Punto de Venta</Data>
+        <Data AD_Column_ID="341" Column="AD_Language" oldValue="es_MX">es_MX</Data>
+        <Data AD_Column_ID="6767" Column="AD_Message_ID" oldValue="53655">53655</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="130" StepType="AD">
+      <PO AD_Table_ID="109" Action="I" Record_ID="53656" Table="AD_Message">
+        <Data AD_Column_ID="588" Column="IsActive">true</Data>
+        <Data AD_Column_ID="589" Column="Created">2020-03-01 21:19:32.696</Data>
+        <Data AD_Column_ID="198" Column="MsgText">Cash Opening</Data>
+        <Data AD_Column_ID="591" Column="Updated">2020-03-01 21:19:32.696</Data>
+        <Data AD_Column_ID="197" Column="MsgType">I</Data>
+        <Data AD_Column_ID="6766" Column="Value">pos.new.cash.opening</Data>
+        <Data AD_Column_ID="199" Column="MsgTip">Use this process for make a Cash Opening of POS</Data>
+        <Data AD_Column_ID="392" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="391" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="7716" Column="EntityType">ECA02</Data>
+        <Data AD_Column_ID="6765" Column="AD_Message_ID">53656</Data>
+        <Data AD_Column_ID="590" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="592" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84346" Column="UUID">d05e5dac-deaf-4a6b-86fe-6eab90d8f68e</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="140" StepType="AD">
+      <PO AD_Table_ID="119" Action="I" Record_ID="0" Table="AD_Message_Trl">
+        <Data AD_Column_ID="609" Column="Created">2020-03-01 21:19:33.898</Data>
+        <Data AD_Column_ID="611" Column="Updated">2020-03-01 21:19:33.898</Data>
+        <Data AD_Column_ID="608" Column="IsActive">true</Data>
+        <Data AD_Column_ID="344" Column="IsTranslated">false</Data>
+        <Data AD_Column_ID="342" Column="MsgText">Cash Opening</Data>
+        <Data AD_Column_ID="343" Column="MsgTip">Use this process for make a Cash Opening of POS</Data>
+        <Data AD_Column_ID="1192" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="1193" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="610" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="341" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="6767" Column="AD_Message_ID">53656</Data>
+        <Data AD_Column_ID="612" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84347" Column="UUID">a0e6c97c-6b9d-4550-b749-d2008a0bee2e</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="150" StepType="AD">
+      <PO AD_Table_ID="119" Action="U" Record_ID="0" Table="AD_Message_Trl">
+        <Data AD_Column_ID="342" Column="MsgText" oldValue="Cash Opening">Crear Apertura de Caja</Data>
+        <Data AD_Column_ID="343" Column="MsgTip" oldValue="Use this process for make a Cash Opening of POS">Use este proceso para crear una apertura de caja</Data>
+        <Data AD_Column_ID="341" Column="AD_Language" oldValue="es_MX">es_MX</Data>
+        <Data AD_Column_ID="6767" Column="AD_Message_ID" oldValue="53656">53656</Data>
+      </PO>
+    </Step>
+  </Migration>
+</Migrations>

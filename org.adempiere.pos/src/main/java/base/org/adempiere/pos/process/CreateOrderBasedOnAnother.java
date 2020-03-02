@@ -61,18 +61,20 @@ public class CreateOrderBasedOnAnother extends CreateOrderBasedOnAnotherAbstract
                 false ,
                 true ,
                 get_TrxName());
-        if (getSOSubType() != null)
-            targetOrder.setC_DocTypeTarget_ID(MDocType.getDocTypeBaseOnSubType(sourceOrder.getAD_Org_ID() , MDocType.DOCBASETYPE_SalesOrder , getSOSubType()));
-
-        targetOrder.setC_BPartner_ID(getInvoicePartnerId());
+        if(getDocTypeRMAId() != 0) {
+        	targetOrder.setC_DocTypeTarget_ID(getDocTypeRMAId());
+        } else if (getDocSubTypeSO() != null) {
+        	targetOrder.setC_DocTypeTarget_ID(MDocType.getDocTypeBaseOnSubType(sourceOrder.getAD_Org_ID() , MDocType.DOCBASETYPE_SalesOrder , getDocSubTypeSO()));
+        }
+        targetOrder.setC_BPartner_ID(getBPartnerId());
         targetOrder.setRef_Order_ID(sourceOrder.get_ID());
-        targetOrder.setDocAction(getDocumentAction());
+        targetOrder.setDocAction(getDocAction());
         targetOrder.setDocStatus(org.compiere.process.DocAction.STATUS_Drafted);
         targetOrder.setProcessed(false);
         targetOrder.saveEx();
 
         //Complete new Order
-        targetOrder.processIt(getDocumentAction());
+        targetOrder.processIt(getDocAction());
         targetOrder.saveEx();
         addLog(targetOrder.getDocumentNo());
         //	Set Record ID
@@ -83,9 +85,11 @@ public class CreateOrderBasedOnAnother extends CreateOrderBasedOnAnotherAbstract
         	return message;
         }
 
-        if(isIncludePayments())
+        if(getIsIncludePayments() != null
+        		&& getIsIncludePayments().equals("Y"))
             createPayments(sourceOrder, targetOrder);
-        if (isAllocated())
+        if (getIsAllocated() != null
+        		&& getIsAllocated().equals("Y"))
             createAllocations(targetOrder);
         //	Default Return
         return message;
@@ -166,7 +170,7 @@ public class CreateOrderBasedOnAnother extends CreateOrderBasedOnAnotherAbstract
             payment.setIsPrepayment(true);
             payment.saveEx();
 
-            payment.processIt(getDocumentAction());
+            payment.processIt(getDocAction());
             payment.saveEx();
             addLog(payment.getDocumentInfo());
         }

@@ -155,11 +155,13 @@ public class WPOSActionMenu implements  POSQueryListener, EventListener{
                     } else {
                         afterExecutionCommand(command);
                         showOkMessage(processInfo);
-                        if(processInfo != null)
-                        	pos.setOrder(processInfo.getRecord_ID());
-                        pos.refreshHeader();
-                        //	Print Ticket
-                        pos.printTicket();
+                        if (processInfo != null 
+                        		&& processInfo.getRecord_ID() > 0) {
+                            pos.setOrder(processInfo.getRecord_ID());
+                            pos.refreshHeader();
+                            //	Print Ticket
+                            pos.printTicket();
+                        }
                     }
                 }
             }
@@ -192,7 +194,13 @@ public class WPOSActionMenu implements  POSQueryListener, EventListener{
                         afterExecutionCommand(command);
                         showOkMessage(processInfo);
                     }
-                    pos.printTicket();
+                    if (processInfo != null 
+                    		&& processInfo.getRecord_ID() > 0) {
+                        pos.setOrder(processInfo.getRecord_ID());
+                        pos.refreshHeader();
+                        //	Print Ticket
+                        pos.printTicket();
+                    }
                 }
             }
             //Return product
@@ -268,7 +276,11 @@ public class WPOSActionMenu implements  POSQueryListener, EventListener{
                     if (processInfo != null)
                         showOkMessage(processInfo);
 
-                    pos.refreshHeader();
+                    if (processInfo != null 
+                    		&& processInfo.getRecord_ID() > 0) {
+                        pos.setOrder(processInfo.getRecord_ID());
+                        pos.refreshHeader();
+                    }
                 }
             }
         }

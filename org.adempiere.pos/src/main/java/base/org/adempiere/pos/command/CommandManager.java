@@ -49,7 +49,7 @@ public class CommandManager {
             commands.put(GENERATE_IMMEDIATE_INVOICE, new CommandImmediateInvoice(GENERATE_IMMEDIATE_INVOICE ,commandReceiver.getEvent()));
             put(GENERATE_IMMEDIATE_INVOICE, commandReceiver);
 
-            commandReceiver =  new CommandReceiver(null, GENERATE_REVERSE_SALES, ReverseTheSalesTransaction.getProcessName());
+            commandReceiver =  new CommandReceiver(null, GENERATE_REVERSE_SALES, "@pos.reverse.sales.transaction@");
             commands.put(GENERATE_REVERSE_SALES, new CommandReverseSalesTransaction(GENERATE_REVERSE_SALES, commandReceiver.getEvent()));
             put(GENERATE_REVERSE_SALES,commandReceiver);
 
@@ -61,12 +61,11 @@ public class CommandManager {
             commands.put(COMPLETE_DOCUMENT, new CommandCompleteDocument(COMPLETE_DOCUMENT, commandReceiver.getEvent()));
             put(COMPLETE_DOCUMENT, commandReceiver);
 
-            commandReceiver = new CommandReceiver(null, GENERATE_WITHDRAWAL, GenerateWithdrawal.getProcessName());
+            commandReceiver = new CommandReceiver(null, GENERATE_WITHDRAWAL, "@pos.new.withdrawal@");
             commands.put(GENERATE_WITHDRAWAL, new CommandWithdrawal(GENERATE_WITHDRAWAL,commandReceiver.getEvent()));
             put(GENERATE_WITHDRAWAL, commandReceiver);
-
-
-            commandReceiver = new CommandReceiver(null, CLOSE_STATEMENT, CloseStatementPOS.getProcessName());
+            
+            commandReceiver = new CommandReceiver(null, CLOSE_STATEMENT, "@pos.close.cash@");
             commands.put(CLOSE_STATEMENT, new CommandWithdrawal(CLOSE_STATEMENT,commandReceiver.getEvent()));
             put(CLOSE_STATEMENT, commandReceiver);
         }
