@@ -462,6 +462,21 @@ public interface I_C_POS
 
 	public org.compiere.model.I_AD_User getSalesRep() throws RuntimeException;
 
+    /** Column name Supervisor_ID */
+    public static final String COLUMNNAME_Supervisor_ID = "Supervisor_ID";
+
+	/** Set Supervisor.
+	  * Supervisor for this user/organization - used for escalation and approval
+	  */
+	public void setSupervisor_ID (int Supervisor_ID);
+
+	/** Get Supervisor.
+	  * Supervisor for this user/organization - used for escalation and approval
+	  */
+	public int getSupervisor_ID();
+
+	public org.compiere.model.I_AD_User getSupervisor() throws RuntimeException;
+
     /** Column name TicketClassName */
     public static final String COLUMNNAME_TicketClassName = "TicketClassName";
 

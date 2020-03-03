@@ -204,8 +204,12 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
 		target.setProcessed (false);
 		target.save(source.get_TrxName());
 		//	Set Document base for return
-		target.setC_DocTypeTarget_ID(MDocType.getDocTypeBaseOnSubType(source.getAD_Org_ID(), 
-        		MDocType.DOCBASETYPE_SalesOrder , MDocType.DOCSUBTYPESO_ReturnMaterial));
+		if(getDocTypeRMAId() != 0) {
+        	target.setC_DocTypeTarget_ID(getDocTypeRMAId());
+        } else {
+        	target.setC_DocTypeTarget_ID(MDocType.getDocTypeBaseOnSubType(source.getAD_Org_ID(), 
+            		MDocType.DOCBASETYPE_SalesOrder , MDocType.DOCSUBTYPESO_ReturnMaterial));
+    	}
         //	Set references
 		target.setC_BPartner_ID(getBPartnerId());
 		target.setRef_Order_ID(source.get_ID());
