@@ -163,6 +163,13 @@ public class POSNumberBox extends Div
     		decimalBox.setValue(new BigDecimal(value.toString()));
     }
     
+	/**
+	 * Select Text
+	 */
+	public void selectText() {
+		decimalBox.setSelectionRange(0, getText().length());
+	}
+    
     /**
      * 
      * @return BigDecimal
@@ -494,6 +501,7 @@ public class POSNumberBox extends Div
 	@Override
 	public void focus()
 	{
+		selectText();
 		decimalBox.focus();
 	}
 	

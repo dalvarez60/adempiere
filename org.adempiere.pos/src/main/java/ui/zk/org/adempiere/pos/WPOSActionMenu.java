@@ -188,18 +188,16 @@ public class WPOSActionMenu implements  POSQueryListener, EventListener{
                     waiting.dispose();
                     if (processInfo != null && processInfo.isError()) {
                         showError(processInfo);
-                    }
-                    else
-                    {
+                    } else {
                         afterExecutionCommand(command);
+                        if (processInfo != null 
+                        		&& processInfo.getRecord_ID() > 0) {
+                            pos.setOrder(processInfo.getRecord_ID());
+                            pos.refreshHeader();
+                            //	Print Ticket
+                            pos.printTicket();
+                        }
                         showOkMessage(processInfo);
-                    }
-                    if (processInfo != null 
-                    		&& processInfo.getRecord_ID() > 0) {
-                        pos.setOrder(processInfo.getRecord_ID());
-                        pos.refreshHeader();
-                        //	Print Ticket
-                        pos.printTicket();
                     }
                 }
             }
