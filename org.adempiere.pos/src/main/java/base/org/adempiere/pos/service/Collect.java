@@ -724,62 +724,61 @@ public class Collect {
 				&& cashPayment.get().doubleValue() > 0) {
 			if(amountRefunded.abs().doubleValue() > cashPayment.get().doubleValue()) {
 				addErrorMsg("@POS.validatePayment.PaymentBustBeExact@");
-			} else {
-				collectDetails
-				.stream()
-				.filter(collect -> collect.getTenderType().equals(X_C_Payment.TENDERTYPE_DirectDebit) 
-						|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_Check)
-						|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditCard)
-						|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditMemo))
-				.forEach(collectDetail -> {
-					boolean result;
-					if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Cash)
-							|| collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Account)) {	//	For Cash
-						result = payCash(collectDetail.getPayAmt(), collectDetail.getCurrencyId(), Env.ZERO);
-					} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_DirectDebit)) {	//	For Direct Debit
-						result = payDirectDebit(collectDetail.getPayAmt(), collectDetail.getCurrencyId(), collectDetail.getRoutingNo(),
-								collectDetail.getA_Country(), collectDetail.getCreditCardVV());
-						if (!result) {					
-							addErrorMsg("@POS.ErrorPaymentDirectDebit@");
-							return;
-						}
-					} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Check)) {	//	For Check
-						result = payCheck(collectDetail.getPayAmt(), collectDetail.getCurrencyId(), null, collectDetail.getRoutingNo(), collectDetail.getReferenceNo());
-						if (!result) {					
-							addErrorMsg("@POS.ErrorPaymentCheck@");
-							return;
-						}
-					} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditCard)) {	//	For Credit
-						//	Valid Expedition
-//						String mmyy = collectDetail.getCreditCardExpMM() + collectDetail.getCreditCardExpYY();
-//						//	Valid Month and Year
-						int month = 0;//MPaymentValidate.getCreditCardExpMM(mmyy);
-						int year = 0;//MPaymentValidate.getCreditCardExpYY(mmyy);
-//						//	Pay from Credit Card
-						result = payCreditCard(collectDetail.getPayAmt(), collectDetail.getCurrencyId(), collectDetail.getA_Name(),
-								month, year, collectDetail.getCreditCardNumber(), collectDetail.getCreditCardVV(), collectDetail.getCreditCardType());
-						if (!result) {					
-							addErrorMsg("@POS.ErrorPaymentCreditCard@");
-							return;
-						}
-					} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditMemo)) {
-						if(isAllowsPartialPayment()) {
-							addErrorMsg("@POS.PrePayment.NoCreditMemoAllowed@");
-							return;
-						}
-						result= payCreditMemo(collectDetail.getM_InvCreditMemo(), collectDetail.getPayAmt());
-						if (!result) {					
-							addErrorMsg("@POS.ErrorPaymentCreditMEmo@");
-							return;
-						}
-					}
-				});
-				boolean result = payCash(cashPayment.get().add(amountRefunded), order.getC_Currency_ID(), amountRefunded.negate());
+			}
+		}
+		collectDetails
+		.stream()
+		.filter(collect -> collect.getTenderType().equals(X_C_Payment.TENDERTYPE_DirectDebit) 
+				|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_Check)
+				|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditCard)
+				|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditMemo))
+		.forEach(collectDetail -> {
+			boolean result;
+			if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Cash)
+					|| collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Account)) {	//	For Cash
+				result = payCash(collectDetail.getPayAmt(), collectDetail.getCurrencyId(), Env.ZERO);
+			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_DirectDebit)) {	//	For Direct Debit
+				result = payDirectDebit(collectDetail.getPayAmt(), collectDetail.getCurrencyId(), collectDetail.getRoutingNo(),
+						collectDetail.getA_Country(), collectDetail.getCreditCardVV());
 				if (!result) {					
-					addErrorMsg("@POS.ErrorPaymentCash@");
+					addErrorMsg("@POS.ErrorPaymentDirectDebit@");
+					return;
+				}
+			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Check)) {	//	For Check
+				result = payCheck(collectDetail.getPayAmt(), collectDetail.getCurrencyId(), null, collectDetail.getRoutingNo(), collectDetail.getReferenceNo());
+				if (!result) {					
+					addErrorMsg("@POS.ErrorPaymentCheck@");
+					return;
+				}
+			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditCard)) {	//	For Credit
+				//	Valid Expedition
+//				String mmyy = collectDetail.getCreditCardExpMM() + collectDetail.getCreditCardExpYY();
+//				//	Valid Month and Year
+				int month = 0;//MPaymentValidate.getCreditCardExpMM(mmyy);
+				int year = 0;//MPaymentValidate.getCreditCardExpYY(mmyy);
+//				//	Pay from Credit Card
+				result = payCreditCard(collectDetail.getPayAmt(), collectDetail.getCurrencyId(), collectDetail.getA_Name(),
+						month, year, collectDetail.getCreditCardNumber(), collectDetail.getCreditCardVV(), collectDetail.getCreditCardType());
+				if (!result) {					
+					addErrorMsg("@POS.ErrorPaymentCreditCard@");
+					return;
+				}
+			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditMemo)) {
+				if(isAllowsPartialPayment()) {
+					addErrorMsg("@POS.PrePayment.NoCreditMemoAllowed@");
+					return;
+				}
+				result= payCreditMemo(collectDetail.getM_InvCreditMemo(), collectDetail.getPayAmt());
+				if (!result) {					
+					addErrorMsg("@POS.ErrorPaymentCreditMEmo@");
 					return;
 				}
 			}
+		});
+		boolean result = payCash(cashPayment.get().add(amountRefunded), order.getC_Currency_ID(), amountRefunded.negate());
+		if (!result) {					
+			addErrorMsg("@POS.ErrorPaymentCash@");
+			return;
 		}
 		
 		

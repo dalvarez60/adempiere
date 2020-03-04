@@ -1287,6 +1287,8 @@ public class CPOS {
 				currentOrder.setDocStatus(MOrder.STATUS_InProgress);
 			//	Set Document Action
 			currentOrder.setDocAction(DocAction.ACTION_Complete);
+			currentOrder.setC_POS_ID(getC_POS_ID());
+			currentOrder.saveEx();
 			if (currentOrder.processIt(DocAction.ACTION_Complete)) {
 				currentOrder.saveEx();
 				orderCompleted = true;

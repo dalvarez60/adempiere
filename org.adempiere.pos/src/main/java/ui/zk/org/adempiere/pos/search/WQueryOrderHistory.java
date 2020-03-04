@@ -75,6 +75,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 	private Datebox 		fieldDateTo;
 	private Datebox 		fieldDateFrom;
 	private Checkbox 		fieldProcessed;
+	private Checkbox 		fieldAisleSeller;
 	private Checkbox 		fieldAllowDate;
 
 	private Date 			dateTo;
@@ -89,6 +90,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 	static final private String OPENAMT         = "OpenAmt";
 	static final private String PAID            = "IsPaid";
 	static final private String PROCESSED       = "Processed";
+	static final private String AISLE_SELLER    = "IsAisleSeller";
 	static final private String INVOICED       	= "IsInvoiced";
 	static final private String DATE	        = "Date";
 	static final private String DATEORDEREDFROM = "From";
@@ -204,6 +206,14 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 		fieldProcessed.addActionListener(this);
 		fieldProcessed.setStyle(WPOS.FONTSIZESMALL);
 		
+		//	Aisle Seller
+		fieldAisleSeller = new Checkbox();
+		fieldAisleSeller.setLabel(Msg.translate(ctx, AISLE_SELLER));
+		fieldAisleSeller.setSelected(false);
+		row.appendChild(fieldAisleSeller);
+		fieldAisleSeller.addActionListener(this);
+		fieldAisleSeller.setStyle(WPOS.FONTSIZESMALL);
+		
 		//	Center
 		posTable = ListboxFactory.newDataTable();
 		posTable.prepareTable (columnInfos, "C_Order",
@@ -231,6 +241,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 	public void reset()
 	{
 		fieldProcessed.setSelected(false);
+		fieldAisleSeller.setSelected(false);
 		fieldDocumentNo.setText(null);
 		fieldDateFrom.setValue(Env.getContextAsDate(Env.getCtx(), "#Date"));
 		fieldDateTo.setValue(Env.getContextAsDate(Env.getCtx(), "#Date"));
@@ -241,7 +252,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 	 * 	Set/display Results
 	 *	@param results results
 	 */
-	public void setResults (Properties ctx, boolean processed, String doc, Date dateFrom, Date dateTo, String bPartner, boolean aDate)
+	public void setResults (Properties ctx, boolean processed, boolean isAisleSeller, String doc, Date dateFrom, Date dateTo, String bPartner, boolean aDate)
 	{
 		StringBuffer sql = new StringBuffer();
 		PreparedStatement preparedStatement = null;
@@ -264,9 +275,13 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 			
 			sql.append(" LEFT JOIN C_invoice        i ON (i.C_Order_ID = o.C_Order_ID)")
 				.append(" LEFT JOIN C_AllocationLine al ON (o.C_Order_ID = al.C_Order_ID)")
-				.append(" WHERE  o.DocStatus <> 'VO'")
-				.append(" AND o.C_POS_ID = ?")
-				.append(" AND o.Processed= ?");
+				.append(" WHERE  o.DocStatus <> 'VO'");
+			if(isAisleSeller) {
+				sql.append(" AND EXISTS(SELECT 1 FROM C_POS p WHERE p.C_POS_ID = o.C_POS_ID AND o.C_POS_ID <> ? AND p.IsAisleSeller = 'Y')");
+			} else {
+				sql.append(" AND o.C_POS_ID = ? ");
+			}	
+			sql.append(" AND o.Processed= ?");
 			if (doc != null && !doc.equalsIgnoreCase(""))
 				sql.append(" AND (o.DocumentNo LIKE '%" + doc + "%' OR  i.DocumentNo LIKE '%" + doc + "%')");
 			if ( dateFrom != null && aDate) {
@@ -391,8 +406,11 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 		else if(e.getTarget().getId().equals("Refresh")) {
 			refresh();
 		}
-		if ( e.getTarget().equals(fieldProcessed) || e.getTarget().equals(fieldAllowDate)
-				|| e.getTarget().equals(fieldDateTo) || e.getTarget().equals(fieldDateFrom)) {
+		if (e.getTarget().equals(fieldProcessed)
+				|| e.getTarget().equals(fieldAisleSeller)
+				|| e.getTarget().equals(fieldAllowDate)
+				|| e.getTarget().equals(fieldDateTo) 
+				|| e.getTarget().equals(fieldDateFrom)) {
 				refresh();
 				return;
 		}
@@ -429,7 +447,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 		else {
 			dateFrom = null;
 		}
-		setResults(ctx, fieldProcessed.isSelected(), fieldDocumentNo.getText(), dateFrom, dateTo, 
+		setResults(ctx, fieldProcessed.isSelected(), fieldAisleSeller.isSelected(), fieldDocumentNo.getText(), dateFrom, dateTo, 
 					fieldBPartner.getText().toUpperCase(), fieldAllowDate.isSelected());
 		unlockUI();
 	}
