@@ -23,6 +23,7 @@ import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -862,17 +863,21 @@ public class CPOS {
 			currentOrder.saveEx();
 			//	Load Price List Version
 			MPriceListVersion priceListVersion = loadPriceListVersion(currentOrder.getM_PriceList_ID());
-			MProductPrice[] productPrices = priceListVersion.getProductPrice("AND EXISTS("
+			List<MProductPrice> productPrices = Arrays.asList(priceListVersion.getProductPrice("AND EXISTS("
 					+ "SELECT 1 "
 					+ "FROM C_OrderLine ol "
 					+ "WHERE ol.C_Order_ID = " + currentOrder.getC_Order_ID() + " "
-					+ "AND ol.M_Product_ID = M_ProductPrice.M_Product_ID)");
+					+ "AND ol.M_Product_ID = M_ProductPrice.M_Product_ID)"));
 			//	Update Lines
 			MOrderLine[] lines = currentOrder.getLines();
 			//	Delete if not exist in price list
 			for (MOrderLine line : lines) {
 				//	Verify if exist
-				if(existInPriceList(line.getM_Product_ID(), productPrices)) {
+				if(productPrices
+					.stream()
+					.filter(productPrice -> productPrice.getM_Product_ID() == line.getM_Product_ID())
+					.findFirst()
+					.isPresent()) {
 					line.setC_BPartner_ID(partner.getC_BPartner_ID());
 					line.setC_BPartner_Location_ID(currentOrder.getC_BPartner_Location_ID());
 					line.setPrice();
@@ -883,22 +888,6 @@ public class CPOS {
 				}
 			}
 		}
-	}
-	
-	/**
-	 * Verify if exist in price list
-	 * @param productId
-	 * @param productPrices
-	 * @return boolean
-	 */
-	private boolean existInPriceList(int productId, MProductPrice[] productPrices) {
-		for(MProductPrice productPrice : productPrices) {
-			if(productId == productPrice.getM_Product_ID()) {
-				return true;
-			}
-		}
-		//	Default Return
-		return false;
 	}
 
 	/**
