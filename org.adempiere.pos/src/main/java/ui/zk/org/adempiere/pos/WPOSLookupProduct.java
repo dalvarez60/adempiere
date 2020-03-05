@@ -132,9 +132,6 @@ public class WPOSLookupProduct extends AutoComplete implements EventListener {
     	
 		if(e.getName().equals(Events.ON_FOCUS))
 			setSelectionRange(0, getText().length());
-		else if(e.getName().equals(Events.ON_BLUR)){
-            lookupProductInterface.quantityRequestFocus();
-		}
 		else if(e.getName().equals(Events.ON_SELECT)){
 			int index = this.getSelectedIndex();
 			if(recordId.size() > index
