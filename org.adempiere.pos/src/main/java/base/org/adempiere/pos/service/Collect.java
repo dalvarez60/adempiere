@@ -438,6 +438,37 @@ public class Collect {
 			return false;
 		}
 	} // payDirectDebit
+	
+	/**
+	 * Payment with reference No
+	 * @param amount
+	 * @param referenceNo
+	 * @param cVV
+	 * @return true if payment processed correctly; otherwise false
+	 */
+	public boolean payment(BigDecimal amount, int currencyId, String tenderType, String referenceNo) {
+		MPayment payment = createPayment(tenderType);
+		payment.setC_CashBook_ID(entityPOS.getC_CashBook_ID());
+		payment.setAmount(currencyId, amount);
+		int conversionTypeId = entityPOS.get_ValueAsInt("C_ConversionType_ID");
+		if(conversionTypeId > 0) {
+			payment.setC_ConversionType_ID(conversionTypeId);
+		}
+		payment.setC_BankAccount_ID(entityPOS.getC_BankAccount_ID());
+		payment.setDocumentNo(referenceNo);
+		payment.setDateTrx(getDateTrx());
+		payment.setDateAcct(getDateTrx());
+		payment.saveEx();
+		payment.setDocAction(MPayment.DOCACTION_Complete);
+		payment.setDocStatus(MPayment.DOCSTATUS_Drafted);
+		if(payment.processIt(MPayment.DOCACTION_Complete)) {
+			payment.saveEx();
+			MBankStatement.addPayment(payment);
+			return true;
+		} else { 
+			return false;
+		}
+	} // payDirectDebit
 
 
 	/**
@@ -555,9 +586,9 @@ public class Collect {
 		if(invoiceId > 0) {
 			payment.setC_Invoice_ID(invoiceId);
 			MInvoice invoice = new MInvoice(Env.getCtx(), payment.getC_Invoice_ID(), trxName);
-			payment.setDescription(Msg.getMsg(Env.getCtx(), "Invoice No ") + invoice.getDocumentNo());
+			payment.setDescription(Msg.parseTranslation(Env.getCtx(), "@C_Invoice_ID@ " + invoice.getDocumentNo()));
 		} else {
-			payment.setDescription(Msg.getMsg(Env.getCtx(), "Order No ") + order.getDocumentNo());
+			payment.setDescription(Msg.parseTranslation(Env.getCtx(), "@C_Invoice_ID@ " + order.getDocumentNo()));
 		}
 		order.setC_POS_ID(entityPOS.getC_POS_ID());
 		order.saveEx(trxName);
@@ -631,18 +662,19 @@ public class Collect {
 		//	Iterate Payments methods
 		for(CollectDetail collectDetail : collectDetails) {
 			if(collectDetail.getConvertedPayAmt() == null
-					|| !(collectDetail.getConvertedPayAmt().doubleValue() > 0))
+					|| !(collectDetail.getConvertedPayAmt().doubleValue() > 0)) {
 				addErrorMsg("@POS.validatePayment.ZeroAmount@");
-			else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Cash)) {	//	For Cash
+			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Cash)) {	//	For Cash
 				cashPayment = cashPayment.add(collectDetail.getConvertedPayAmt());
-			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Account)) {
-				otherPayments = otherPayments.add(collectDetail.getConvertedPayAmt());
-			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_DirectDebit)) {	//	For Direct Debit
-				otherPayments = otherPayments.add(collectDetail.getConvertedPayAmt());
-			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Check)) {	//	For Check
-				otherPayments = otherPayments.add(collectDetail.getConvertedPayAmt());
-			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditCard)) {	//	For Credit
-				otherPayments = otherPayments.add(collectDetail.getConvertedPayAmt());
+			} 
+//			else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Account)) {
+//				otherPayments = otherPayments.add(collectDetail.getConvertedPayAmt());
+//			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_DirectDebit)) {	//	For Direct Debit
+//				otherPayments = otherPayments.add(collectDetail.getConvertedPayAmt());
+//			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Check)) {	//	For Check
+//				otherPayments = otherPayments.add(collectDetail.getConvertedPayAmt());
+//			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditCard)) {	//	For Credit
+//				otherPayments = otherPayments.add(collectDetail.getConvertedPayAmt());
 				//	Valid Expedition
 //				String mmyy = collectDetail.getCreditCardExpMM() + collectDetail.getCreditCardExpYY();
 //				String processError = MPaymentValidate.validateCreditCardExp(mmyy);
@@ -657,7 +689,8 @@ public class Collect {
 //				if(processError != null && !processError.isEmpty()) {
 //					addErrorMsg("@" + processError + "@");
 //				}
-			} else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditMemo)) {
+//			} 
+			else if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditMemo)) {
 				if(collectDetail.getC_Invoice_ID() == 0 )
 					addErrorMsg("@POS.CreditMemoNotSelected@");
 				BigDecimal amtCreditMemo = collectDetail.getOpenAmtCreditMemo();
@@ -668,7 +701,7 @@ public class Collect {
 				otherPayments = otherPayments.add(collectDetail.getConvertedPayAmt());
 				
 			} else {
-				addErrorMsg("@POS.validatePayment.UnsupportedPaymentType@");
+				otherPayments = otherPayments.add(collectDetail.getConvertedPayAmt());
 			}
 		}
 
@@ -705,10 +738,8 @@ public class Collect {
 		//	Get payments without cash
 		collectDetails
 			.stream()
-			.filter(collect -> collect.getTenderType().equals(X_C_Payment.TENDERTYPE_DirectDebit) 
-					|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_Check)
-					|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditCard)
-					|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditMemo))
+			.filter(collect -> !collect.getTenderType().equals(X_C_Payment.TENDERTYPE_Cash) 
+					&& !collect.getTenderType().equals(X_C_Payment.TENDERTYPE_Account))
 			.forEach(collectDetail -> otherPayment.updateAndGet(amount -> amount = amount.add(collectDetail.getPayAmt())));
 		//	Get cash
 		collectDetails
@@ -727,11 +758,11 @@ public class Collect {
 			}
 		}
 		collectDetails
-		.stream()
-		.filter(collect -> collect.getTenderType().equals(X_C_Payment.TENDERTYPE_DirectDebit) 
-				|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_Check)
-				|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditCard)
-				|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditMemo))
+//		.stream()
+//		.filter(collect -> collect.getTenderType().equals(X_C_Payment.TENDERTYPE_DirectDebit) 
+//				|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_Check)
+//				|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditCard)
+//				|| collect.getTenderType().equals(X_C_Payment.TENDERTYPE_CreditMemo))
 		.forEach(collectDetail -> {
 			boolean result;
 			if(collectDetail.getTenderType().equals(X_C_Payment.TENDERTYPE_Cash)
@@ -773,24 +804,18 @@ public class Collect {
 					addErrorMsg("@POS.ErrorPaymentCreditMEmo@");
 					return;
 				}
+			} else {
+				payment(collectDetail.getPayAmt(), collectDetail.getCurrencyId(), collectDetail.getTenderType(), collectDetail.getReferenceNo());
 			}
 		});
-		boolean result = payCash(cashPayment.get().add(amountRefunded), order.getC_Currency_ID(), amountRefunded.negate());
-		if (!result) {					
-			addErrorMsg("@POS.ErrorPaymentCash@");
-			return;
-		}
-		
-		
 		//	Iterate Payments methods
-
-//		else if(cashPayment.signum() > 0) {
-//			result = payCash(cashPayment, order.getC_Currency_ID(), amountRefunded.negate());
-//			if (!result) {					
-//				addErrorMsg("@POS.ErrorPaymentCash@");
-//				return;
-//			}
-//		}
+		if(cashPayment.get().signum() > 0) {
+			boolean result = payCash(cashPayment.get(), order.getC_Currency_ID(), amountRefunded.negate());
+			if (!result) {					
+				addErrorMsg("@POS.ErrorPaymentCash@");
+				return;
+			}
+		}
 		order.saveEx(trxName);
 	}  // processPayment
 	/**

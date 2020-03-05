@@ -275,7 +275,6 @@ public class WPOSActionPanel extends WPOSSubPanel
 		try {
             if(e.getName().equals(Events.ON_CHANGE)){
                 if(lookupProduct.getSelectedProductId() >= 0) {
-//                	lookupProduct.setText(String.valueOf(lookupProduct.getSelectedProductId()));
                 	lookupProduct.captureProduct();
                 }
             }

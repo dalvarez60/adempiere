@@ -77,6 +77,7 @@ import org.compiere.util.Env;
 import org.compiere.util.Msg;
 import org.compiere.util.Trx;
 import org.compiere.util.TrxRunnable;
+import org.compiere.util.Util;
 import org.compiere.util.ValueNamePair;
 import org.eevolution.service.dsl.ProcessBuilder;
 
@@ -575,7 +576,9 @@ public class CPOS {
 	 */
 	public String getBPName() {
 		if (hasBPartner())
-			return partner.getName();
+			return partner.getValue() 
+					+ " - " + partner.getName() 
+					+ (!Util.isEmpty(partner.getName2())? " " + partner.getName2(): "s");
 		return null;
 	}
 	

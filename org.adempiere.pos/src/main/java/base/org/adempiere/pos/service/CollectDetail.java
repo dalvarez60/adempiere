@@ -334,7 +334,7 @@ public class CollectDetail {
 	public String getReferenceNo() {
 		return m_ReferenceNo;
 	}
-
+	
 	/**
 	 * @return the m_C_Bank_ID
 	 */

@@ -379,7 +379,6 @@ public class WPOSQuantityPanel extends WPOSSubPanel implements POSPanelInterface
 
 	public void setQuantity(BigDecimal value) {
 		fieldQuantity.setValue(value);
-		fieldQuantity.focus();
 	}
 
 	public void requestFocus() {

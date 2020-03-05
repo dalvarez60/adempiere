@@ -84,6 +84,7 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 	private String 			m_TenderType;
 	private Grid 			v_StandarPanel;
 	private Grid 			v_CheckPanel;
+	private Grid 			v_ReferencePanel;
 	private Grid 			v_CreditPanel;
 	private Grid 			v_DebitPanel;
 	private Properties 		p_ctx;
@@ -94,6 +95,7 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 	/**	Check				*/
 	private Datebox 		fCheckdate;
 	private WPOSTextField 	fCheckRouteNo;
+	private WPOSTextField 	fReferenceNo;
 	private WPOSTextField 	fCheckNo;
 	
 	/**	Credit Card			*/
@@ -258,6 +260,28 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 		fCheckdate.addEventListener("onFocus", this);
 		row.appendChild(fCheckdate);
 
+	}
+	
+	/**
+	 * Load Reference Panel
+	 * @return void
+	 */
+	public void loadReferencePanel(){
+		
+		v_ReferencePanel = GridFactory.newGridLayout();
+		v_ReferencePanel.setWidth("100%");
+		v_ReferencePanel.setHeight("95px");
+		groupPanel.appendChild(v_ReferencePanel);
+		
+		Rows rows = v_ReferencePanel.newRows();
+		Row row = rows.newRow();
+
+		fReferenceNo = new WPOSTextField(Msg.translate(p_ctx, "ReferenceNo"), keyboard);
+		row.appendChild(fReferenceNo);
+		fReferenceNo.addEventListener("onFocus", this);
+		fReferenceNo.setStyle(HEIGHT+WIDTH+FONT_SIZE);
+		
+		row.appendChild(fReferenceNo);
 	}
 
 	/**
@@ -513,6 +537,7 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 				fCheckNo.showKeyboard();
 				setReferenceNo(fCheckNo.getText());
 				fCheckNo.setFocus(true);
+				fCheckNo.selectText();
 			} else if(e.getTarget().equals(fCheckNo.getComponent(WPOSTextField.PRIMARY))) {
 				isKeyboard = false;
 			} else if(e.getTarget().equals(fCheckRouteNo.getComponent(WPOSTextField.SECONDARY)) && !isKeyboard) {
@@ -520,6 +545,7 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 				fCheckRouteNo.showKeyboard();
 				setRoutingNo(fCheckRouteNo.getText());
 				fCheckRouteNo.setFocus(true);
+				fCheckRouteNo.selectText();
 			} else if(e.getTarget().equals(fCheckRouteNo.getComponent(WPOSTextField.PRIMARY))){
 				isKeyboard = false;
 			} else if(e.getTarget().equals(fDebitRoutingNo.getComponent(WPOSTextField.SECONDARY)) && !isKeyboard) {
@@ -527,12 +553,14 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 				fDebitRoutingNo.showKeyboard();
 				setRoutingNo(fDebitRoutingNo.getText());
 				fDebitRoutingNo.setFocus(true);
+				fDebitRoutingNo.selectText();
 			} else if(e.getTarget().equals(fDebitRoutingNo.getComponent(WPOSTextField.PRIMARY))) {
 				isKeyboard = false;
 			} else if(e.getTarget().equals(fDebitCVC.getComponent(WPOSTextField.SECONDARY)) && !isKeyboard) {
 				isKeyboard = true;
 				fDebitCVC.showKeyboard();
 				fDebitCVC.setFocus(true);
+				fDebitCVC.selectText();
 			} else if(e.getTarget().equals(fDebitCVC.getComponent(WPOSTextField.PRIMARY)) && e.getName().equals(Events.ON_FOCUS)) {
 				isKeyboard = false;
 			} else if(e.getTarget().equals(fDebitCountry.getComponent(WPOSTextField.SECONDARY)) && !isKeyboard) {
@@ -540,8 +568,17 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 				fDebitCountry.showKeyboard();
 				setA_Country(fDebitCountry.getText());
 				fDebitCountry.setFocus(true);
+				fDebitCountry.selectText();
 			} else if(e.getTarget().equals(fDebitCountry.getComponent(WPOSTextField.PRIMARY)) && e.getName().equals(Events.ON_FOCUS)) {
 				isKeyboard = false;
+			} else if(e.getTarget().equals(fReferenceNo.getComponent(WPOSTextField.PRIMARY))){
+				isKeyboard = false;
+			} else if(e.getTarget().equals(fReferenceNo.getComponent(WPOSTextField.SECONDARY)) && !isKeyboard) {
+				isKeyboard = true;
+				fReferenceNo.showKeyboard();
+				setReferenceNo(fReferenceNo.getText());
+				fReferenceNo.setFocus(true);
+				fReferenceNo.selectText();
 			}
 //			else if(e.getTarget().equals(fCCardNo.getComponent(WPOSTextField.SECONDARY)) && !isKeyboard) {
 //				isKeyboard = true;
@@ -616,6 +653,8 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 		
 		//	Load Standard Panel
 		loadStandardPanel();
+		//	Load Reference Panel
+		loadReferencePanel();
 		//	Load Check Panel
 		loadCheckPanel();
 		//	Load Credit Panel
@@ -653,6 +692,16 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 
 	@Override
 	public String validatePayment() {
+		if(getTenderType().equals(X_C_Payment.TENDERTYPE_Check)) {
+			setRoutingNo(fCheckRouteNo.getText());
+			setReferenceNo(fCheckNo.getText());
+		} else if(getTenderType().equals(X_C_Payment.TENDERTYPE_DirectDebit)) {
+			setRoutingNo(fCheckRouteNo.getText());
+			setA_Country(fDebitCountry.getText());
+		} else if(!getTenderType().equals(X_C_Payment.TENDERTYPE_Cash)
+				&& !getTenderType().equals(X_C_Payment.TENDERTYPE_Account)) {
+			setReferenceNo(fReferenceNo.getText());
+		}
 		return null;
 	}
 
@@ -671,26 +720,37 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 			v_DebitPanel.setVisible(false);
 			v_CreditPanel.setVisible(false);
 			v_CreditMemoPanel.setVisible(false);
+			v_ReferencePanel.setVisible(false);
 		} else if(p_TenderType.equals(X_C_Payment.TENDERTYPE_DirectDebit)){
 			v_CheckPanel.setVisible(false);
 			v_DebitPanel.setVisible(true);
 			v_CreditPanel.setVisible(false);
 			v_CreditMemoPanel.setVisible(false);
+			v_ReferencePanel.setVisible(false);
 		} else if(p_TenderType.equals(X_C_Payment.TENDERTYPE_CreditCard)){
 			v_CheckPanel.setVisible(false);
 			v_DebitPanel.setVisible(false);
 			v_CreditPanel.setVisible(true);
 			v_CreditMemoPanel.setVisible(false);
+			v_ReferencePanel.setVisible(false);
 		} else if(p_TenderType.equals(X_C_Payment.TENDERTYPE_CreditMemo)){
 			v_CheckPanel.setVisible(false);
 			v_DebitPanel.setVisible(false);
 			v_CreditPanel.setVisible(false);
 			v_CreditMemoPanel.setVisible(true);
+			v_ReferencePanel.setVisible(false);
+		} else if(p_TenderType.equals(X_C_Payment.TENDERTYPE_Cash)) {
+			v_CheckPanel.setVisible(false);
+			v_DebitPanel.setVisible(false);
+			v_CreditPanel.setVisible(false);
+			v_CreditMemoPanel.setVisible(false);
+			v_ReferencePanel.setVisible(false);
 		} else {
 			v_CheckPanel.setVisible(false);
 			v_DebitPanel.setVisible(false);
 			v_CreditPanel.setVisible(false);
 			v_CreditMemoPanel.setVisible(false);
+			v_ReferencePanel.setVisible(true);
 		}
 	}
 
