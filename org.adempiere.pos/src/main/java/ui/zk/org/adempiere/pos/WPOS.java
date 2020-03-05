@@ -239,14 +239,14 @@ public class WPOS extends CPOS implements IFormController, EventListener, POSPan
 	 *	@return true if found/set
 	 */
 	private void setMPOS() {
-		int salesRep_ID = Env.getAD_User_ID(getCtx());
-		setPOS(salesRep_ID);
+		int salesRepresentativeId = Env.getAD_User_ID(getCtx());
+		setPOS(salesRepresentativeId);
 		if(getM_POS() != null) {
 			validLocator();
 			return;
 		}
 		int orgId = Env.getAD_Org_ID(getCtx());
-		poss = getPOSByOrganization(orgId);
+		poss = getPOSBySalesRepresentativeAndOrganization(salesRepresentativeId, orgId);
 		//	Select POS
 		String msg = Msg.getMsg(getCtx(), "SelectPOS");
 		selection = new Window();

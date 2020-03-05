@@ -296,6 +296,19 @@ public interface I_C_POS
 	  */
 	public boolean isActive();
 
+    /** Column name IsAisleSeller */
+    public static final String COLUMNNAME_IsAisleSeller = "IsAisleSeller";
+
+	/** Set Aisle Seller.
+	  * Aisle Seller or consultant for products without invoice
+	  */
+	public void setIsAisleSeller (boolean IsAisleSeller);
+
+	/** Get Aisle Seller.
+	  * Aisle Seller or consultant for products without invoice
+	  */
+	public boolean isAisleSeller();
+
     /** Column name IsEnableProductLookup */
     public static final String COLUMNNAME_IsEnableProductLookup = "IsEnableProductLookup";
 
@@ -334,6 +347,19 @@ public interface I_C_POS
 	  * Indicates that a Supervisor Pin is mandatory to execute some tasks e.g. (Change Price , Offer Discount , Delete POS Line)
 	  */
 	public boolean isPOSRequiredPIN();
+
+    /** Column name IsSharedPOS */
+    public static final String COLUMNNAME_IsSharedPOS = "IsSharedPOS";
+
+	/** Set Is Shared POS.
+	  * Is Shared POS
+	  */
+	public void setIsSharedPOS (boolean IsSharedPOS);
+
+	/** Get Is Shared POS.
+	  * Is Shared POS
+	  */
+	public boolean isSharedPOS();
 
     /** Column name MeasureRequestCode */
     public static final String COLUMNNAME_MeasureRequestCode = "MeasureRequestCode";

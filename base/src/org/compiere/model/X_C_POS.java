@@ -30,7 +30,7 @@ public class X_C_POS extends PO implements I_C_POS, I_Persistent
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20200303L;
+	private static final long serialVersionUID = 20200305L;
 
     /** Standard Constructor */
     public X_C_POS (Properties ctx, int C_POS_ID, String trxName)
@@ -441,6 +441,30 @@ public class X_C_POS extends PO implements I_C_POS, I_Persistent
 		return (String)get_Value(COLUMNNAME_InvoiceRule);
 	}
 
+	/** Set Aisle Seller.
+		@param IsAisleSeller 
+		Aisle Seller or consultant for products without invoice
+	  */
+	public void setIsAisleSeller (boolean IsAisleSeller)
+	{
+		set_Value (COLUMNNAME_IsAisleSeller, Boolean.valueOf(IsAisleSeller));
+	}
+
+	/** Get Aisle Seller.
+		@return Aisle Seller or consultant for products without invoice
+	  */
+	public boolean isAisleSeller () 
+	{
+		Object oo = get_Value(COLUMNNAME_IsAisleSeller);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
 	/** Set Enable POS Product Lookup.
 		@param IsEnableProductLookup 
 		Allows product lookup in order to show search key , name , quantity available , standard price and list price for selecting a product
@@ -504,6 +528,30 @@ public class X_C_POS extends PO implements I_C_POS, I_Persistent
 	public boolean isPOSRequiredPIN () 
 	{
 		Object oo = get_Value(COLUMNNAME_IsPOSRequiredPIN);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
+	/** Set Is Shared POS.
+		@param IsSharedPOS 
+		Is Shared POS
+	  */
+	public void setIsSharedPOS (boolean IsSharedPOS)
+	{
+		set_Value (COLUMNNAME_IsSharedPOS, Boolean.valueOf(IsSharedPOS));
+	}
+
+	/** Get Is Shared POS.
+		@return Is Shared POS
+	  */
+	public boolean isSharedPOS () 
+	{
+		Object oo = get_Value(COLUMNNAME_IsSharedPOS);
 		if (oo != null) 
 		{
 			 if (oo instanceof Boolean) 

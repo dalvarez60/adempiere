@@ -151,12 +151,12 @@ public class CPOS {
 	
 	/**
 	 * 	Set MPOS
-	 * @param salesRepId
+	 * @param salesRepresentativeId
 	 * @return true if found/set
 	 */
-	public void setPOS(int salesRepId) {
+	public void setPOS(int salesRepresentativeId) {
 		//List<MPOS> poss = getPOSs(p_SalesRep_ID);
-		List<MPOS> poss = getPOSByOrganization(Env.getAD_Org_ID(getCtx()));
+		List<MPOS> poss = getPOSBySalesRepresentativeAndOrganization(salesRepresentativeId, Env.getAD_Org_ID(getCtx()));
 		//
 		if (poss.size() == 0) {
 			throw new AdempierePOSException("@NoPOSForUser@");
@@ -899,6 +899,16 @@ public class CPOS {
 	 */
 	public List<MPOS> getPOSByOrganization (int orgId) {
 		return MPOS.getByOrganization(ctx, orgId, null);
+	}
+	
+	/**
+	 * Get POS by Sales Representative and Organization
+	 * @param salesRepresentativeId
+	 * @param organizationId
+	 * @return
+	 */
+	public List<MPOS> getPOSBySalesRepresentativeAndOrganization(int salesRepresentativeId, int organizationId) {
+		return MPOS.getBySalesRepresentativeAndOrganization(getCtx(), organizationId, salesRepresentativeId, null);
 	}
 
 	/**************************************************************************
