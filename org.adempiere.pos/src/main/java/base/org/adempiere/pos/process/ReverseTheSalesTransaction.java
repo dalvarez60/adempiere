@@ -61,13 +61,16 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
         // Get Order
         MOrder sourceOrder = new MOrder(getCtx(), getOrderId(), get_TrxName());
         //Create new Order based on source order
-        MOrder returnOrder = createReturnSource(sourceOrder);
+        MOrder returnOrder = null;
         //	Get Invoices for ths order
         List<MInOut> shipments = Arrays.asList(sourceOrder.getShipments());
+        boolean isDelivered = false;
         // If not exist invoice then only is necessary reverse shipment
         if (shipments.size() > 0) {
-            // Validate if partner not is POS partner standard then reverse shipment
+        	isDelivered = true;
+        	// Validate if partner not is POS partner standard then reverse shipment
             if (sourceOrder.getC_BPartner_ID() != getBPartnerId() || isCancelled()) {
+            	returnOrder = createReturnSource(sourceOrder);
                 List<Integer> selectedRecordsIds = new ArrayList<>();
             	ProcessBuilder builder = ProcessBuilder
                 	.create(getCtx())
@@ -93,6 +96,12 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
             		.withoutTransactionClose()
             		.execute(get_TrxName());
             }
+        } else {
+        	if(getDocTypeRMAId() == 0) {
+            	setDocTypeRMAId(MDocType.getDocTypeBaseOnSubType(sourceOrder.getAD_Org_ID(), 
+                		MDocType.DOCBASETYPE_SalesOrder , MDocType.DOCSUBTYPESO_ReturnMaterial));
+            }
+        	returnOrder = MOrder.copyFrom(sourceOrder, today, getDocTypeRMAId(), sourceOrder.isSOTrx(), false, false, get_TrxName());
         }
         //	Process return Order
         if(!returnOrder.processIt(DocAction.ACTION_Complete)) {
@@ -103,16 +112,18 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
         //	Set Record ID
         getProcessInfo().setRecord_ID(returnOrder.get_ID());
         //	Generate Return
-        if (sourceOrder.getC_BPartner_ID() != getBPartnerId() || isCancelled()) {
-        	ProcessBuilder
-                	.create(getCtx())
-                	.process(InOutGenerate.getProcessId())
-                	.withTitle(InOutGenerate.getProcessName())
-                	.withParameter(InOutGenerate.M_WAREHOUSE_ID, sourceOrder.getM_Warehouse_ID())
-                	.withParameter(InOutGenerate.DOCACTION, DocAction.ACTION_Complete)
-                	.withSelectedRecordsIds(I_C_Order.Table_ID, Arrays.asList(returnOrder.getC_Order_ID()))
-                	.withoutTransactionClose()
-                	.execute(get_TrxName());
+        if(isDelivered) {
+        	if (sourceOrder.getC_BPartner_ID() != getBPartnerId() || isCancelled()) {
+            	ProcessBuilder
+                    	.create(getCtx())
+                    	.process(InOutGenerate.getProcessId())
+                    	.withTitle(InOutGenerate.getProcessName())
+                    	.withParameter(InOutGenerate.M_WAREHOUSE_ID, sourceOrder.getM_Warehouse_ID())
+                    	.withParameter(InOutGenerate.DOCACTION, DocAction.ACTION_Complete)
+                    	.withSelectedRecordsIds(I_C_Order.Table_ID, Arrays.asList(returnOrder.getC_Order_ID()))
+                    	.withoutTransactionClose()
+                    	.execute(get_TrxName());
+            }
         }
         //	Generate Invoice
         ProcessInfo invoiceInformation = null;
@@ -137,6 +148,9 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
         	.forEach(payment -> addLog(payment.getDocumentInfo()));
         sourceOrder.processIt(DocAction.ACTION_Close);
         sourceOrder.saveEx();
+        if(isDelivered) {
+        	returnOrder.processIt(DocAction.ACTION_Close);
+        }
         return "@Ok@";
     }
 
