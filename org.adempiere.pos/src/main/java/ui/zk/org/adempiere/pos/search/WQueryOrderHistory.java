@@ -97,6 +97,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 	static final private String DATEORDEREDTO   = "To";
 	static final private String DATEORDERED     = "DateOrdered";
 	static final private String QUERY           = "Query";
+	static final private String SALES_REP      	= "SalesRep_ID";
 	
 	/**	Table Column Layout Info			*/
 	private static ColumnInfo[] columnInfos = new ColumnInfo[] {
@@ -108,7 +109,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 		new ColumnInfo(Msg.translate(Env.getCtx(), GRANDTOTAL), GRANDTOTAL, BigDecimal.class),
 		new ColumnInfo(Msg.translate(Env.getCtx(), OPENAMT), OPENAMT, BigDecimal.class),
 		new ColumnInfo(Msg.translate(Env.getCtx(), PAID), PAID, Boolean.class), 
-		new ColumnInfo(Msg.translate(Env.getCtx(), PROCESSED), PROCESSED, Boolean.class), 
+		new ColumnInfo(Msg.translate(Env.getCtx(), SALES_REP), SALES_REP, String.class), 
 		new ColumnInfo(Msg.translate(Env.getCtx(), INVOICED), INVOICED, Boolean.class)
 	};
 
@@ -263,7 +264,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 				// priority for open amounts: invoices, allocations, order
 				.append(" COALESCE(SUM(invoiceopen(i.C_Invoice_ID, 0)), COALESCE(o.GrandTotal - SUM(al.amount),0)) AS InvoiceOpen, ")
 			    .append(" COALESCE(i.IsPaid, CASE WHEN o.GrandTotal - SUM(al.amount) = 0 THEN 'Y' ELSE 'N' END) IsPaid, ")
-			    .append(" o.Processed, ")
+			    .append(" u.Name, ")
 			    .append(" CASE WHEN COALESCE(COUNT(i.C_Invoice_ID), 0) > 0 THEN 'Y' ELSE 'N' END")
 				.append(" FROM C_Order o ")
 				.append(" INNER JOIN C_BPartner      b ON (o.C_BPartner_ID = b.C_BPartner_ID)");
@@ -275,6 +276,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 			
 			sql.append(" LEFT JOIN C_invoice        i ON (i.C_Order_ID = o.C_Order_ID)")
 				.append(" LEFT JOIN C_AllocationLine al ON (o.C_Order_ID = al.C_Order_ID)")
+				.append(" LEFT JOIN AD_User u ON(u.AD_User_ID = o.SalesRep_ID)")
 				.append(" WHERE  o.DocStatus <> 'VO'");
 			if(isAisleSeller) {
 				sql.append(" AND EXISTS(SELECT 1 FROM C_POS p WHERE p.C_POS_ID = o.C_POS_ID AND o.C_POS_ID <> ? AND p.IsAisleSeller = 'Y')");
@@ -293,7 +295,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 			if (bPartner != null && !bPartner.equalsIgnoreCase(""))
 				sql.append(" AND (UPPER(b.name) LIKE '%" + bPartner + "%' OR UPPER(b.value) LIKE '%" + bPartner + "%' )");
 			//	Group By
-			sql.append(" GROUP BY o.C_Order_ID, o.DocumentNo, dt.Name , b.Name, o.GrandTotal, o.Processed, i.IsPaid ");
+			sql.append(" GROUP BY o.C_Order_ID, o.DocumentNo, dt.Name, b.Name, u.Name, o.GrandTotal, o.Processed, i.IsPaid ");
 			sql.append(" ORDER BY o.Updated");
 			int i = 1;			
 			preparedStatement = DB.prepareStatement(sql.toString(), null);

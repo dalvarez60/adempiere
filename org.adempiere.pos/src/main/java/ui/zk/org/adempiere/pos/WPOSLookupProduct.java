@@ -25,7 +25,6 @@ import java.util.TreeMap;
 
 import org.adempiere.pos.service.CPOS;
 import org.adempiere.pos.service.POSLookupProductInterface;
-import org.adempiere.util.StringUtils;
 import org.adempiere.webui.component.AutoComplete;
 import org.adempiere.webui.window.FDialog;
 import org.compiere.model.MProduct;
@@ -52,17 +51,16 @@ public class WPOSLookupProduct extends AutoComplete implements EventListener {
     private Integer priceListId = 0;
     private Integer warehouseId = 0;
     private Integer partnerId = 0;
-    private String fill = StringUtils.repeat(" " , 400);
     static private Integer PRODUCT_VALUE_LENGTH = 14;
     static private Integer PRODUCT_NAME_LENGTH = 50;
     static private Integer QUANTITY_LENGTH = 16;
 
     private String separator = "|";
-    private String productValueTitle   = StringUtils.trunc(Msg.parseTranslation(Env.getCtx() , "@ProductValue@") + fill , PRODUCT_VALUE_LENGTH );
-    private String productTitle        = StringUtils.trunc(Msg.parseTranslation(Env.getCtx() , "@M_Product_ID@") + fill , PRODUCT_NAME_LENGTH );
-    private String availableTitle      = StringUtils.trunc(Msg.parseTranslation(Env.getCtx() , "@QtyAvailable@") + fill , QUANTITY_LENGTH );
-    private String priceStdTitle       = StringUtils.trunc(Msg.parseTranslation(Env.getCtx() , "@PriceStd@")     + fill , QUANTITY_LENGTH );
-    private String priceListTile       = StringUtils.trunc(Msg.parseTranslation(Env.getCtx() , "@PriceList@")    + fill , QUANTITY_LENGTH );
+    private String productValueTitle   = String.format("%1$-" + PRODUCT_VALUE_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@ProductValue@"));
+    private String productTitle        = String.format("%1$-" + PRODUCT_NAME_LENGTH + "s", "@M_Product_ID@");
+    private String availableTitle      = String.format("%1$" + QUANTITY_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@QtyAvailable@"));
+    private String priceStdTitle       = String.format("%1$" + QUANTITY_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@PriceStd@"));
+    private String priceListTile       = String.format("%1$" + QUANTITY_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@PriceList@"));
     private String title = "";
 
     private ArrayList<Integer> recordId = new ArrayList<Integer>();
@@ -92,7 +90,7 @@ public class WPOSLookupProduct extends AutoComplete implements EventListener {
         //productLookupComboBox.addKeyListener(this);
         char[] charArray = new char[200];
         Arrays.fill(charArray,' ');
-        this.fill = new String(charArray);
+//        this.fill = new String(charArray);
         this.title = new StringBuffer()
                 .append(productValueTitle).append(separator)
                 .append(productTitle).append(separator)
@@ -205,11 +203,11 @@ public class WPOSLookupProduct extends AutoComplete implements EventListener {
             String priceStd =  (String)columns.elementAt(4);
             String priceList = (String)columns.elementAt(5);
             StringBuilder lineString = new StringBuilder();
-            lineString.append(StringUtils.trunc(productValue + fill , PRODUCT_VALUE_LENGTH )).append(separator)
-              .append(StringUtils.trunc(productName + fill , PRODUCT_NAME_LENGTH )).append(separator)
-              .append(StringUtils.trunc(qtyAvailable + fill , QUANTITY_LENGTH)).append(separator)
-              .append(StringUtils.trunc(priceStd + fill, QUANTITY_LENGTH )).append(separator)
-              .append(StringUtils.trunc(priceList + fill, QUANTITY_LENGTH ));
+            lineString.append(String.format("%1$-" + PRODUCT_VALUE_LENGTH + "s", productValue)).append(separator)
+              .append(String.format("%1$-" + PRODUCT_NAME_LENGTH + "s", productName)).append(separator)
+              .append(String.format("%1$" + QUANTITY_LENGTH + "s", qtyAvailable)).append(separator)
+              .append(String.format("%1$" + QUANTITY_LENGTH + "s", priceStd)).append(separator)
+              .append(String.format("%1$" + QUANTITY_LENGTH + "s", priceList));
 
             line.put(lineString.toString(), (Integer)columns.elementAt(0));
         }

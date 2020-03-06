@@ -809,13 +809,13 @@ public class Collect {
 			}
 		});
 		//	Iterate Payments methods
-		if(cashPayment.get().signum() > 0) {
-			boolean result = payCash(cashPayment.get(), order.getC_Currency_ID(), amountRefunded.negate());
-			if (!result) {					
-				addErrorMsg("@POS.ErrorPaymentCash@");
-				return;
-			}
-		}
+//		if(cashPayment.get().signum() > 0) {
+//			boolean result = payCash(cashPayment.get(), order.getC_Currency_ID(), amountRefunded.negate());
+//			if (!result) {					
+//				addErrorMsg("@POS.ErrorPaymentCash@");
+//				return;
+//			}
+//		}
 		order.saveEx(trxName);
 	}  // processPayment
 	/**

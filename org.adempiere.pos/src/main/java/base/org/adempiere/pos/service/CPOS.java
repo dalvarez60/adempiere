@@ -2394,21 +2394,21 @@ public class CPOS {
 			statement.setString(count, "N");
 
 			ResultSet resultSet = statement.executeQuery();
-
+			DecimalFormat format = DisplayType.getNumberFormat(DisplayType.Amount);
 			while (resultSet.next()) {
 				Vector<Object> columns = new Vector<>();
 				Integer productId = resultSet.getInt(1);
 				String  productValue = resultSet.getString(2).trim();
 				String  productName = resultSet.getString(3).trim();
-				String  qtyAvailable = resultSet.getBigDecimal(4) != null ? resultSet.getBigDecimal(4).toString().trim() : "0";
-				String  priceStd = resultSet.getBigDecimal(5) != null ? resultSet.getBigDecimal(5).setScale(2, BigDecimal.ROUND_UP).toString().trim() :  "0";
-				String  priceList = resultSet.getBigDecimal(6) != null ? resultSet.getBigDecimal(6).setScale(2, BigDecimal.ROUND_UP).toString().trim() : "0 ";
+				BigDecimal  qtyAvailable = resultSet.getBigDecimal(4) != null ? resultSet.getBigDecimal(4) : Env.ZERO;
+				BigDecimal  priceStd = resultSet.getBigDecimal(5) != null ? resultSet.getBigDecimal(5) :  Env.ZERO;
+				BigDecimal  priceList = resultSet.getBigDecimal(6) != null ? resultSet.getBigDecimal(6) : Env.ZERO;
 				columns.add(productId);
 				columns.add(productValue);
 				columns.add(productName);
-				columns.add(qtyAvailable);
-				columns.add(priceStd);
-				columns.add(priceList);
+				columns.add(format.format(qtyAvailable));
+				columns.add(format.format(priceStd));
+				columns.add(format.format(priceList));
 				rows.add(columns);
 			}
 

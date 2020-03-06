@@ -298,6 +298,7 @@ public class WPOSTextField extends Div {
 	@Override
 	public void setFocus(boolean focus){
 		f_TextField.setFocus(focus);
+		f_PlaceHolder.setText("");
 	}
 	
 	/**
