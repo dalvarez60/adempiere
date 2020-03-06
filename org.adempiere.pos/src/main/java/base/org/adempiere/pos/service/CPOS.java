@@ -858,10 +858,13 @@ public class CPOS {
 					currentOrder.setPaymentRule(MOrder.PAYMENTRULE_Cash);
 			}
 			//	Set Sales Representative
-			if (currentOrder.getC_BPartner().getSalesRep_ID()!=0)
+			if(entityPOS.isSharedPOS()) {
+				currentOrder.setSalesRep_ID(Env.getAD_User_ID(getCtx()));
+			} else if (currentOrder.getC_BPartner().getSalesRep_ID() != 0) {
 				currentOrder.setSalesRep_ID(currentOrder.getC_BPartner().getSalesRep_ID());
-			else
+			} else {
 				currentOrder.setSalesRep_ID(entityPOS.getSalesRep_ID());
+			}
 			//	Save Header
 			currentOrder.saveEx();
 			//	Load Price List Version
