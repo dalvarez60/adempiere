@@ -153,10 +153,8 @@ public class CreateOrderBasedOnAnother extends CreateOrderBasedOnAnotherAbstract
      * @param sourceOrder
      * @param targetOrder
      */
-    private void createPayments(MOrder sourceOrder , MOrder targetOrder)
-    {
-        for (MPayment sourcePayment : MPayment.getOfOrder(sourceOrder))
-        {
+    private void createPayments(MOrder sourceOrder , MOrder targetOrder) {
+        for (MPayment sourcePayment : MPayment.getOfOrder(sourceOrder)) {
             MPayment payment = new MPayment(getCtx() ,  0 , get_TrxName());
             PO.copyValues(sourcePayment, payment);
             payment.setDateTrx(today);

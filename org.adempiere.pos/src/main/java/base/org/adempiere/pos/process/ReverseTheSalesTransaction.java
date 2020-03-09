@@ -39,6 +39,7 @@ import org.compiere.util.Env;
 import org.compiere.util.Msg;
 import org.eevolution.service.dsl.ProcessBuilder;
 import org.spin.process.OrderRMACreateFrom;
+import org.spin.process.OrderRMACreateFromInvoice;
 
 
 /**
@@ -65,6 +66,7 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
         //	Get Invoices for ths order
         List<MInOut> shipments = Arrays.asList(sourceOrder.getShipments());
         boolean isDelivered = false;
+        boolean isInvoiced = false;
         // If not exist invoice then only is necessary reverse shipment
         if (shipments.size() > 0) {
         	isDelivered = true;
@@ -97,11 +99,37 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
             		.execute(get_TrxName());
             }
         } else {
-        	if(getDocTypeRMAId() == 0) {
-            	setDocTypeRMAId(MDocType.getDocTypeBaseOnSubType(sourceOrder.getAD_Org_ID(), 
-                		MDocType.DOCBASETYPE_SalesOrder , MDocType.DOCSUBTYPESO_ReturnMaterial));
-            }
-        	returnOrder = MOrder.copyFrom(sourceOrder, today, getDocTypeRMAId(), sourceOrder.isSOTrx(), false, false, get_TrxName());
+        	List<MInvoice> invoices = Arrays.asList(sourceOrder.getInvoices());
+        	if(invoices.size() > 0) {
+        		isInvoiced = true;
+        		if (sourceOrder.getC_BPartner_ID() != getBPartnerId() || isCancelled()) {
+            		returnOrder = createReturnSource(sourceOrder);
+                    List<Integer> selectedRecordsIds = new ArrayList<>();
+                	ProcessBuilder builder = ProcessBuilder
+                    	.create(getCtx())
+                    	.process(OrderRMACreateFromInvoice.getProcessId())
+                    	.withRecordId(I_C_Order.Table_ID, returnOrder.getC_Order_ID());
+                	//	
+                	LinkedHashMap<Integer, LinkedHashMap<String, Object>> selection = new LinkedHashMap<>();
+                	invoices.forEach(invoice -> {
+                		//	Add values
+                		Arrays.asList(invoice.getLines())
+                			.forEach(sourceInvoiceLine -> {
+                				LinkedHashMap<String, Object> selectionValues = new LinkedHashMap<String, Object>();
+                				selectionValues.put("CF_M_Product_ID", sourceInvoiceLine.getM_Product_ID());
+                	    		selectionValues.put("CF_C_Charge_ID", sourceInvoiceLine.getC_Charge_ID());
+                	    		selectionValues.put("CF_C_UOM_ID", sourceInvoiceLine.getC_UOM_ID());
+                	    		selectionValues.put("CF_QtyEntered", sourceInvoiceLine.getQtyEntered());
+                	    		selectedRecordsIds.add(sourceInvoiceLine.getM_InOutLine_ID());
+                	    		selection.put(sourceInvoiceLine.getM_InOutLine_ID(), selectionValues);
+                			});
+                	});
+                	//	
+                	builder.withSelectedRecordsIds(I_M_InOut.Table_ID, selectedRecordsIds, selection)
+                		.withoutTransactionClose()
+                		.execute(get_TrxName());
+            	}
+        	}
         }
         //	Process return Order
         if(!returnOrder.processIt(DocAction.ACTION_Complete)) {
@@ -226,7 +254,6 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
     	}
         //	Set references
 		target.setC_BPartner_ID(getBPartnerId());
-		target.setRef_Order_ID(source.get_ID());
 		target.setProcessed(false);
 		target.saveEx();
 		return target;
