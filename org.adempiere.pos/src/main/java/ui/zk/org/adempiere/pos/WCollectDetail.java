@@ -21,7 +21,9 @@ import java.awt.Event;
 import java.awt.event.KeyEvent;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.KeyStroke;
 
@@ -40,8 +42,8 @@ import org.adempiere.webui.component.Rows;
 import org.adempiere.webui.window.FDialog;
 import org.compiere.model.MLookup;
 import org.compiere.model.MLookupFactory;
-import org.compiere.model.MLookupInfo;
 import org.compiere.model.X_C_Payment;
+import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.KeyNamePair;
@@ -90,6 +92,7 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 	private Properties 		p_ctx;
 	private Listbox 		fTenderType;
 	private Listbox 		currency;
+	private Listbox 		bank;
 	public POSNumberBox 	fPayAmt;
 	
 	/**	Check				*/
@@ -176,42 +179,11 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 
 		fTenderType.setStyle(HEIGHT+WIDTH+FONT_SIZE);
 		row.appendChild(fTenderType);
-		//	Currency
-		columnId = 5299;
-		int conversionTypeId = v_Parent.getM_POS().get_ValueAsInt("C_ConversionType_ID");
-		if(conversionTypeId > 0) {
-			int fromCurrencyId = v_Parent.getOrder().getC_Currency_ID();
-			MLookupInfo info = MLookupFactory.getLookupInfo(Env.getCtx(), 0, columnId, DisplayType.TableDir);
-			info.ValidationCode = "EXISTS(SELECT 1 FROM C_Conversion_Rate cr "
-					+ "WHERE cr.C_Currency_ID_To = C_Currency.C_Currency_ID "
-					+ "AND cr.C_Currency_ID = " + fromCurrencyId + " "
-					+ "AND cr.C_ConversionType_ID = " + conversionTypeId + ") "
-					+ "OR C_Currency_ID = " + v_Parent.getOrder().getC_Currency_ID();
-			info.IsValidated = false;
-			MLookup currencyLookup = new MLookup(info, 0);
-			ArrayList<Object> currencyList = currencyLookup.getData(true, true, true, true);
-			
+		//	Load bank information
+		loadBankList();
+		//	Load currency list
+		if(loadCurrencyList()) {
 			row = rows.newRow();
-			currency = ListboxFactory.newDropdownListbox();
-			currency.setStyle(HEIGHT+WIDTH+FONT_SIZE);
-			currency.setValue(fromCurrencyId);
-			currency.addActionListener(this);
-			
-			/**
-			 *	Load Credit Cards
-			 */
-			int index = 0;
-			for (int i = 0; i < currencyList.size(); i++) {
-				Object obj = currencyList.get(i)	;
-				if (obj instanceof KeyNamePair)	{
-					KeyNamePair key = (KeyNamePair) obj;
-					currency.appendItem(key.getName(), key.getKey());
-					if(key.getKey() == fromCurrencyId) {
-						index = i;
-					}
-				}
-			}
-			currency.setSelectedIndex(index);
 			row.appendChild(currency);
 		}
 		//	
@@ -226,6 +198,61 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 		fPayAmt.addEventListener("onBlur",this);
 		fPayAmt.addEventListener(Events.ON_CHANGING,this);
 		fPayAmt.addEventListener(Events.ON_CHANGE,this);
+	}
+	
+	/**
+	 * Load currency
+	 * @return
+	 */
+	private boolean loadCurrencyList() {
+		int conversionTypeId = v_Parent.getM_POS().get_ValueAsInt("C_ConversionType_ID");
+		if(conversionTypeId == 0) {
+			return false;
+		}
+		currency = ListboxFactory.newDropdownListbox();
+		currency.setStyle(HEIGHT+WIDTH+FONT_SIZE);
+		currency.addActionListener(this);
+		int fromCurrencyId = v_Parent.getOrder().getC_Currency_ID();
+		AtomicInteger index = new AtomicInteger();
+		AtomicInteger currentIndex = new AtomicInteger();
+		//	Get Currency List
+		Arrays.asList(DB.getKeyNamePairs("SELECT c.C_Currency_ID, (c.ISO_Code || '(' || c.CurSymbol || ')') AS CurrencyName "
+				+ "FROM C_Currency c "
+				+ "WHERE c.IsActive = 'Y' "
+				+ "AND EXISTS(SELECT 1 FROM C_Conversion_Rate cr "
+				+ "WHERE cr.C_Currency_ID_To = c.C_Currency_ID "
+				+ "AND cr.C_Currency_ID = ? "
+				+ "AND cr.C_ConversionType_ID = ?) "
+				+ "OR c.C_Currency_ID = ?", false, fromCurrencyId, conversionTypeId, v_Parent.getOrder().getC_Currency_ID()))
+		.forEach(bankValue -> {
+			//	Add Conversion at date
+			BigDecimal conversionRate = getConversionRateFromCurrency(bankValue.getKey());
+			currency.appendItem(bankValue.getName() + " " + DisplayType.getNumberFormat(DisplayType.CostPrice).format(conversionRate), bankValue.getKey());
+			if(bankValue.getKey() == fromCurrencyId) {
+				currentIndex.set(index.get());
+			}
+			index.addAndGet(1);
+		});
+		currency.setSelectedIndex(currentIndex.get());
+		return true;
+	}
+	
+	/**
+	 * Load bank list
+	 */
+	private void loadBankList() {
+		bank = ListboxFactory.newDropdownListbox();
+		bank.setStyle(HEIGHT+WIDTH+FONT_SIZE);
+		bank.addActionListener(this);
+		//	Get Bank List
+		Arrays.asList(DB.getKeyNamePairs("SELECT b.C_Bank_ID, (b.RoutingNo || '-' || b.Name) AS BankName "
+				+ "FROM C_Bank b "
+				+ "WHERE b.IsActive = 'Y' "
+				+ "AND b.BankType = 'B' "
+				+ "AND b.AD_Client_ID = ?", false, Env.getAD_Client_ID(Env.getCtx())))
+		.forEach(bankValue -> {
+			bank.appendItem(bankValue.getName(), bankValue.getKey());
+		});
 	}
 	
 	/**
@@ -266,21 +293,20 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 	 * Load Reference Panel
 	 * @return void
 	 */
-	public void loadReferencePanel(){
+	public void loadReferencePanel() {
 		
 		v_ReferencePanel = GridFactory.newGridLayout();
 		v_ReferencePanel.setWidth("100%");
 		v_ReferencePanel.setHeight("95px");
-		groupPanel.appendChild(v_ReferencePanel);
 		
 		Rows rows = v_ReferencePanel.newRows();
 		Row row = rows.newRow();
 
 		fReferenceNo = new WPOSTextField(Msg.translate(p_ctx, "ReferenceNo"), keyboard);
 		row.appendChild(fReferenceNo);
-		fReferenceNo.addEventListener("onFocus", this);
+		fReferenceNo.addEventListener(Events.ON_FOCUS, this);
 		fReferenceNo.setStyle(HEIGHT+WIDTH+FONT_SIZE);
-		
+		row.appendChild(bank);
 		row.appendChild(fReferenceNo);
 	}
 
@@ -391,9 +417,10 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 		row = rows.newRow();
 		
 		row.appendChild(fDebitCountry);
-		fDebitCountry.addEventListener("onFocus", this);
+		fDebitCountry.addEventListener(Events.ON_FOCUS, this);
 		fDebitCountry.setStyle(HEIGHT+WIDTH+FONT_SIZE);
-
+		//	
+		row.appendChild(bank);
 	}
 
 	/**
@@ -519,6 +546,9 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 //			String hourString = dateFormat.format(fCheckdate.getValue());
 //			Timestamp dateTrx = Timestamp.valueOf(hourString);
 //			setDateTrx(dateTrx);
+		} else if(e.getTarget().equals(bank)) {
+			int bankId = (Integer) bank.getValue();
+			setC_Bank_ID(bankId);
 		} else if(e.getTarget().equals(fCreditMemo)) {
 			int m_C_Invoice_ID = Integer.valueOf(fCreditMemo.getValue().toString());
 			setC_Invoice_ID(m_C_Invoice_ID);
@@ -670,6 +700,7 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 		groupPanel.appendChild(v_CreditPanel);
 		groupPanel.appendChild(v_DebitPanel);
 		groupPanel.appendChild(v_CreditMemoPanel);
+		groupPanel.appendChild(v_ReferencePanel);
 
 	//  Change View
 		changeViewPanel();

@@ -22,7 +22,6 @@ import java.util.Calendar;
 import java.util.Locale;
 
 import org.compiere.model.MConversionRate;
-import org.compiere.model.MCurrency;
 import org.compiere.model.MDocType;
 import org.compiere.model.MInvoice;
 import org.compiere.model.MLookup;
@@ -633,7 +632,6 @@ public class CollectDetail {
 
 	/**
 	 * Initial Pay Amount set
-	 * @author Dixon Martinez, dmartinez@erpcya.com, ERPCyA http://www.erpcya.com
 	 * @param m_InitPayAmt
 	 * @return void
 	 */
@@ -643,7 +641,6 @@ public class CollectDetail {
 	
 	/**
 	 * Get Credit Memo 
-	 * @author Dixon Martinez, dmartinez@erpcya.com, ERPCyA http://www.erpcya.com
 	 * @param p_C_BPartner_ID
 	 * @return
 	 * @return MLookup
@@ -666,7 +663,6 @@ public class CollectDetail {
 		return lookup;
 	}
 	/**
-	 * @author Dixon Martinez, dmartinez@erpcya.com, ERPCyA http://www.erpcya.com
 	 * @return
 	 * @return m_CreditMemo
 	 */
@@ -752,10 +748,8 @@ public class CollectDetail {
 		}
 		//	Convert it for origin
 		BigDecimal payAmt = getPayAmt();
-		MCurrency currency = MCurrency.get (Env.getCtx(), getCurrencyDocumentId());
 		//	
-		payAmt = payAmt.divide(currencyRate, MathContext.DECIMAL128)
-				.setScale(currency.getStdPrecision (), BigDecimal.ROUND_HALF_UP);
+		payAmt = payAmt.divide(currencyRate, MathContext.DECIMAL128);
 		//	Return 
 		return payAmt;
 	}
@@ -768,7 +762,6 @@ public class CollectDetail {
 				|| getCurrencyDocumentId() <= 0) {
 			return;
 		}
-		MCurrency currency = MCurrency.get (Env.getCtx(), getCurrencyId());
 		int clientId = Env.getContextAsInt (Env.getCtx(), 0, "AD_Client_ID");
 		int organizationId = Env.getContextAsInt (Env.getCtx(), 0, "AD_Org_ID");
 		// Get Currency Rate
@@ -781,9 +774,26 @@ public class CollectDetail {
 		}
 		//	Set Payment Amount
 		BigDecimal payAmt = getInitPayAmt();
-		payAmt = payAmt.multiply(currencyRate).setScale (
-				currency.getStdPrecision (), BigDecimal.ROUND_HALF_UP);
+		payAmt = payAmt.multiply(currencyRate, MathContext.DECIMAL128);
 		setPayAmt(payAmt);
+	}
+	
+	/**
+	 * Get conversion Rate from a specific currency
+	 * @param currencyDocumentId
+	 * @return
+	 */
+	public BigDecimal getConversionRateFromCurrency(int currencyDocumentId) {
+		BigDecimal currencyRate = Env.ONE;
+		int clientId = Env.getContextAsInt (Env.getCtx(), 0, "AD_Client_ID");
+		int organizationId = Env.getContextAsInt (Env.getCtx(), 0, "AD_Org_ID");
+		if (getCurrencyId() != currencyDocumentId) {
+			currencyRate = MConversionRate.getRate(currencyDocumentId, getCurrencyId(), getDateTrx(), getConversionTypeId(), clientId, organizationId);
+			if (currencyRate == null || currencyRate.compareTo(Env.ZERO) == 0) {
+				currencyRate = Env.ONE;
+			}
+		}
+		return currencyRate;
 	}
 	
 	@Override

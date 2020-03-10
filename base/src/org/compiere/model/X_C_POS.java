@@ -30,7 +30,7 @@ public class X_C_POS extends PO implements I_C_POS, I_Persistent
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20200305L;
+	private static final long serialVersionUID = 20200309L;
 
     /** Standard Constructor */
     public X_C_POS (Properties ctx, int C_POS_ID, String trxName)
@@ -218,6 +218,34 @@ public class X_C_POS extends PO implements I_C_POS, I_Persistent
 	public int getC_CashBook_ID () 
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_C_CashBook_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_C_ConversionType getC_ConversionType() throws RuntimeException
+    {
+		return (org.compiere.model.I_C_ConversionType)MTable.get(getCtx(), org.compiere.model.I_C_ConversionType.Table_Name)
+			.getPO(getC_ConversionType_ID(), get_TrxName());	}
+
+	/** Set Currency Type.
+		@param C_ConversionType_ID 
+		Currency Conversion Rate Type
+	  */
+	public void setC_ConversionType_ID (int C_ConversionType_ID)
+	{
+		if (C_ConversionType_ID < 1) 
+			set_Value (COLUMNNAME_C_ConversionType_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_ConversionType_ID, Integer.valueOf(C_ConversionType_ID));
+	}
+
+	/** Get Currency Type.
+		@return Currency Conversion Rate Type
+	  */
+	public int getC_ConversionType_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_ConversionType_ID);
 		if (ii == null)
 			 return 0;
 		return ii.intValue();

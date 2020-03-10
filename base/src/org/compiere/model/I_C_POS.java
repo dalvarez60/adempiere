@@ -144,6 +144,21 @@ public interface I_C_POS
 
 	public org.compiere.model.I_C_CashBook getC_CashBook() throws RuntimeException;
 
+    /** Column name C_ConversionType_ID */
+    public static final String COLUMNNAME_C_ConversionType_ID = "C_ConversionType_ID";
+
+	/** Set Currency Type.
+	  * Currency Conversion Rate Type
+	  */
+	public void setC_ConversionType_ID (int C_ConversionType_ID);
+
+	/** Get Currency Type.
+	  * Currency Conversion Rate Type
+	  */
+	public int getC_ConversionType_ID();
+
+	public org.compiere.model.I_C_ConversionType getC_ConversionType() throws RuntimeException;
+
     /** Column name C_DocType_ID */
     public static final String COLUMNNAME_C_DocType_ID = "C_DocType_ID";
 

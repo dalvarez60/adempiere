@@ -57,7 +57,7 @@ public class WPOSLookupProduct extends AutoComplete implements EventListener {
 
     private String separator = "|";
     private String productValueTitle   = String.format("%1$-" + PRODUCT_VALUE_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@ProductValue@"));
-    private String productTitle        = String.format("%1$-" + PRODUCT_NAME_LENGTH + "s", "@M_Product_ID@");
+    private String productTitle        = String.format("%1$-" + PRODUCT_NAME_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@M_Product_ID@"));
     private String availableTitle      = String.format("%1$" + QUANTITY_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@QtyAvailable@"));
     private String priceStdTitle       = String.format("%1$" + QUANTITY_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@PriceStd@"));
     private String priceListTile       = String.format("%1$" + QUANTITY_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@PriceList@"));
@@ -75,8 +75,8 @@ public class WPOSLookupProduct extends AutoComplete implements EventListener {
         this.setClass("input-search");
         this.setButtonVisible(false);
         this.addEventListener(Events.ON_FOCUS, this);
-        this.addEventListener(Events.ON_BLUR, this);
         this.addEventListener(Events.ON_SELECT, this);
+        this.addEventListener(Events.ON_OK, this);
         setFillingComponent(productLookupComboBox);
         productLookupComboBox.setStyle("Font-size:medium; font-weight:bold");
     }
@@ -86,11 +86,8 @@ public class WPOSLookupProduct extends AutoComplete implements EventListener {
      */
     public void setFillingComponent(AutoComplete productLookupComboBox) {
         this.productLookupComboBox = productLookupComboBox;
-        //productLookupComboBox.addActionListener(this);
-        //productLookupComboBox.addKeyListener(this);
         char[] charArray = new char[200];
         Arrays.fill(charArray,' ');
-//        this.fill = new String(charArray);
         this.title = new StringBuffer()
                 .append(productValueTitle).append(separator)
                 .append(productTitle).append(separator)
@@ -130,7 +127,8 @@ public class WPOSLookupProduct extends AutoComplete implements EventListener {
     	
 		if(e.getName().equals(Events.ON_FOCUS))
 			setSelectionRange(0, getText().length());
-		else if(e.getName().equals(Events.ON_SELECT)){
+		else if(e.getName().equals(Events.ON_SELECT)
+				|| e.getName().equals(Events.ON_OK)) {
 			int index = this.getSelectedIndex();
 			if(recordId.size() > index
 					&& index >= 0) {

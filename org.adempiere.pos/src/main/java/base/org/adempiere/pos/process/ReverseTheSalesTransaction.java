@@ -66,7 +66,6 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
         //	Get Invoices for ths order
         List<MInOut> shipments = Arrays.asList(sourceOrder.getShipments());
         boolean isDelivered = false;
-        boolean isInvoiced = false;
         // If not exist invoice then only is necessary reverse shipment
         if (shipments.size() > 0) {
         	isDelivered = true;
@@ -101,7 +100,6 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
         } else {
         	List<MInvoice> invoices = Arrays.asList(sourceOrder.getInvoices());
         	if(invoices.size() > 0) {
-        		isInvoiced = true;
         		if (sourceOrder.getC_BPartner_ID() != getBPartnerId() || isCancelled()) {
             		returnOrder = createReturnSource(sourceOrder);
                     List<Integer> selectedRecordsIds = new ArrayList<>();
@@ -120,8 +118,8 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
                 	    		selectionValues.put("CF_C_Charge_ID", sourceInvoiceLine.getC_Charge_ID());
                 	    		selectionValues.put("CF_C_UOM_ID", sourceInvoiceLine.getC_UOM_ID());
                 	    		selectionValues.put("CF_QtyEntered", sourceInvoiceLine.getQtyEntered());
-                	    		selectedRecordsIds.add(sourceInvoiceLine.getM_InOutLine_ID());
-                	    		selection.put(sourceInvoiceLine.getM_InOutLine_ID(), selectionValues);
+                	    		selectedRecordsIds.add(sourceInvoiceLine.getC_InvoiceLine_ID());
+                	    		selection.put(sourceInvoiceLine.getC_InvoiceLine_ID(), selectionValues);
                 			});
                 	});
                 	//	

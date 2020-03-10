@@ -794,7 +794,6 @@ public class MOrderLine extends X_C_OrderLine implements IDocumentLine
 	 * @param invoiceLineReference
 	 */
 	public void setRef_InvoiceLine(MInvoiceLine invoiceLineReference) {
-		setRef_InOutLine_ID(invoiceLineReference.getM_InOutLine_ID());
 		//	Charge
 		if(invoiceLineReference.getC_Charge_ID() != 0) {
 			setC_Charge_ID(invoiceLineReference.getC_Charge_ID());
@@ -835,7 +834,10 @@ public class MOrderLine extends X_C_OrderLine implements IDocumentLine
 		setPriceEntered(invoiceLineReference.getPriceEntered());
         setPriceActual(invoiceLineReference.getPriceActual());
         setC_Tax_ID(invoiceLineReference.getC_Tax_ID());
-        int inOutLineReferenceId = invoiceLineReference.getInOutLineId();
+        int inOutLineReferenceId = invoiceLineReference.getM_InOutLine_ID();
+        if(inOutLineReferenceId == 0) {
+        	inOutLineReferenceId = invoiceLineReference.getInOutLineId();
+        }
 		//	Set Price from Invoice / Order
 		if (inOutLineReferenceId != 0) {
             setRef_InOutLine_ID(inOutLineReferenceId);

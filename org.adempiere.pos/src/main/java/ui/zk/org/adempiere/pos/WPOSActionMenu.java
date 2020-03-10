@@ -24,11 +24,8 @@ import org.adempiere.pos.command.Command;
 import org.adempiere.pos.command.CommandManager;
 import org.adempiere.pos.command.CommandReceiver;
 import org.adempiere.pos.search.QueryBPartner;
-import org.adempiere.pos.search.WPOSQuery;
-import org.adempiere.pos.search.WQueryBPartner;
 import org.adempiere.pos.service.POSQueryInterface;
 import org.adempiere.pos.service.POSQueryListener;
-import org.adempiere.webui.apps.AEnv;
 import org.adempiere.webui.apps.BusyDialog;
 import org.adempiere.webui.panel.CustomForm;
 import org.adempiere.webui.session.SessionManager;
@@ -55,7 +52,6 @@ import org.zkoss.zul.Menupopup;
 public class WPOSActionMenu implements  POSQueryListener, EventListener{
 
     private WPOS pos;
-    private WPOSQuery queryPartner;
     private Menupopup popupMenu;
     private CommandManager commandManager;
     private Command currentCommand;
@@ -96,12 +92,13 @@ public class WPOSActionMenu implements  POSQueryListener, EventListener{
     private void beforeExecutionCommand(Command command) throws AdempierePOSException
     {
         if (command.getCommand() == CommandManager.GENERATE_IMMEDIATE_INVOICE) {
-            if (pos.isCompleted()) {
-                queryPartner = new WQueryBPartner(pos);
-                AEnv.showWindow(queryPartner);
-                queryPartner.addOptionListener(this);
-                queryPartner.showView();
-            }
+        	executeCommand(command);
+//            if (pos.isCompleted()) {
+//                queryPartner = new WQueryBPartner(pos);
+//                AEnv.showWindow(queryPartner);
+//                queryPartner.addOptionListener(this);
+//                queryPartner.showView();
+//            }
         } else if (command.getCommand() == CommandManager.GENERATE_REVERSE_SALES) {
             if (pos.isCompleted())
                 executeCommand(command);
@@ -134,7 +131,7 @@ public class WPOSActionMenu implements  POSQueryListener, EventListener{
                     && pos.isCompleted()
                     && !pos.isVoided()) {
                 receiver.setCtx(pos.getCtx());
-                receiver.setPartnerId(queryPartner.getRecord_ID());
+                receiver.setPartnerId(pos.getC_BPartner_ID());
                 receiver.setOrderId(pos.getC_Order_ID());
                 receiver.setPOSId(pos.getC_POS_ID());
                 receiver.setBankAccountId(pos.getC_BankAccount_ID());
@@ -265,19 +262,17 @@ public class WPOSActionMenu implements  POSQueryListener, EventListener{
                 command.execute(receiver);
                 ProcessInfo processInfo = receiver.getProcessInfo();
                 waiting.dispose();
-                if (processInfo != null && processInfo.isError()) {
+                if (processInfo!= null && processInfo.isError()) {
                     showError(processInfo);
-                }
-                else
-                {
+                } else {
                     afterExecutionCommand(command);
-                    if (processInfo != null)
-                        showOkMessage(processInfo);
-
+                    showOkMessage(processInfo);
                     if (processInfo != null 
                     		&& processInfo.getRecord_ID() > 0) {
                         pos.setOrder(processInfo.getRecord_ID());
                         pos.refreshHeader();
+                        //	Print Ticket
+                        pos.printTicket();
                     }
                 }
             }

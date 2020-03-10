@@ -17,6 +17,7 @@
 package org.adempiere.pos.service;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -42,6 +43,7 @@ import org.compiere.model.MAllocationLine;
 import org.compiere.model.MBPartner;
 import org.compiere.model.MBPartnerLocation;
 import org.compiere.model.MCashLine;
+import org.compiere.model.MConversionRate;
 import org.compiere.model.MCurrency;
 import org.compiere.model.MDocType;
 import org.compiere.model.MInOut;
@@ -840,6 +842,9 @@ public class CPOS {
 		if (partner == null || partner.get_ID() == 0) {
 			throw new AdempierePOSException("POS.NoBPartnerForOrder");
 		} else {
+			if(currentOrder == null) {
+				newOrder(partnerId);
+			}
 			log.info("CPOS.SetC_BPartner_ID -" + partner);
 			currentOrder.setBPartner(partner);
 			//	
@@ -963,11 +968,12 @@ public class CPOS {
 			//	Valid No changes
 			if(qtyOrdered.compareTo(orderLine.getQtyOrdered()) == 0
 			&& priceEntered.compareTo(orderLine.getPriceEntered()) == 0
+			&& discountPercentage != null 
 			&& discountPercentage.compareTo(orderLine.getDiscount()) == 0 ) {
 				return null;
 			}
 
-			if (discountPercentage.compareTo(orderLine.getDiscount()) != 0) {
+			if (discountPercentage != null && discountPercentage.compareTo(orderLine.getDiscount()) != 0) {
 				BigDecimal discountAmount = orderLine.getPriceList().multiply(discountPercentage.divide(Env.ONEHUNDRED));
 				priceEntered = orderLine.getPriceList().subtract(discountAmount);
 			}
@@ -1630,10 +1636,39 @@ public class CPOS {
 		}
 		if(receivedAmount.get(orderId) == null) {
 			AtomicReference<BigDecimal> amount = new AtomicReference<>(Env.ZERO);
-			MPayment.getOfOrder(getOrder()).forEach(payment -> amount.updateAndGet(amountToUpdate -> amountToUpdate.add(payment.getPayAmt())));
+			MPayment.getOfOrder(getOrder()).forEach(payment -> amount.updateAndGet(amountToUpdate -> amountToUpdate.add(
+					getConvertedPaymentAmount(payment.getPayAmt(), payment.getC_Currency_ID(), payment.getDateTrx())))
+			);
 			receivedAmount.put(orderId, amount.get());
 		}
 		return receivedAmount.get(orderId);
+	}
+	
+	/**
+	 * Get converted payment amount to currency document
+	 * @return
+	 */
+	private BigDecimal getConvertedPaymentAmount(BigDecimal paymentAmount, int currencyId, Timestamp transactionDate) {
+		if(getC_Currency_ID() <= 0
+				|| currencyId <= 0
+				|| getOrder().getC_Currency_ID() <= 0) {
+			return paymentAmount;
+		}
+		//	
+		BigDecimal currencyRate = MConversionRate.getRate(
+				currencyId,
+				getC_Currency_ID(), 
+				transactionDate, 
+				getM_POS().getC_ConversionType_ID(), 
+				getOrder().getAD_Client_ID(), 
+				getOrder().getAD_Org_ID());
+		if (currencyRate == null || currencyRate.compareTo(Env.ZERO) == 0) {
+			currencyRate = Env.ONE;
+		}
+		MCurrency currency = MCurrency.get(getCtx(), getC_Currency_ID());
+		//	Payment amount
+		return paymentAmount.multiply(currencyRate, MathContext.DECIMAL128)
+				.setScale(currency.getStdPrecision (), BigDecimal.ROUND_HALF_UP);
 	}
 
 	/**

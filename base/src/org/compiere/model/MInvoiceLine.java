@@ -980,8 +980,8 @@ public class MInvoiceLine extends X_C_InvoiceLine implements DocumentReversalLin
     					+ "FROM M_InOutLine il "
     					+ "WHERE il.C_OrderLine_ID = ? "
     					+ "AND EXISTS(SELECT 1 FROM "
-    					+ "						M_InOutLine i "
-    					+ "						WHERE i.M_InOutLine_ID = il.M_InOutLine_ID "
+    					+ "						M_InOut i "
+    					+ "						WHERE i.M_InOut_ID = il.M_InOut_ID "
     					+ "						AND i.DocStatus IN('CO', 'CL'))", getC_OrderLine_ID());
     		}
         	//	

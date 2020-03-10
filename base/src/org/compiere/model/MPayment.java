@@ -1361,7 +1361,7 @@ public final class MPayment extends X_C_Payment
 		if (getC_DocType_ID() == 0)
 			return false;
 		//
-		boolean isSOTrx = false;
+		boolean isSOTrx = isReceipt();
 		//	Check Invoice First
 		if (getC_Invoice_ID() > 0)
 		{
@@ -1394,14 +1394,16 @@ public final class MPayment extends X_C_Payment
 							+ "WHERE i.C_Invoice_ID = ?", allocationValue.getC_Invoice_ID());
 					//	Validate with invoice
 					isSOTrx = documentBaseType.equals(MDocType.DOCBASETYPE_ARInvoice) || documentBaseType.equals(MDocType.DOCBASETYPE_APCreditMemo);
-					if(isSOTrx != isReceipt()) {
+					if(isSOTrx != isReceipt() 
+							&& !getPayAmt().equals(Env.ZERO)) {
 						return false;
 					}
 				}
 			}
 		}
 		//	Validate
-		if(isSOTrx != isReceipt()) {
+		if(isSOTrx != isReceipt() 
+				&& !getPayAmt().equals(Env.ZERO)) {
 			return false;
 		}
 		//	OK
