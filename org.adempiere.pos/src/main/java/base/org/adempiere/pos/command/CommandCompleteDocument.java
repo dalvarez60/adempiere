@@ -16,10 +16,15 @@
 
 package org.adempiere.pos.command;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.I_C_Order;
+import org.compiere.model.MInOut;
 import org.compiere.model.MOrder;
 import org.compiere.process.DocAction;
+import org.compiere.process.InOutGenerate;
 import org.compiere.process.InvoiceGenerate;
 import org.compiere.process.ProcessInfo;
 import org.compiere.util.Trx;
@@ -49,19 +54,25 @@ public class CommandCompleteDocument extends CommandAbstract implements Command 
                 ProcessInfo processInformation = new ProcessInfo("Complete Order", 0, I_C_Order.Table_ID, order.getC_Order_ID());
                 processInformation.setSummary("@C_Order_ID@: " + order.getDocumentNo() + " @Completed@");
                 //	Generate Return
-//                boolean isDelivered = false;
-//                List<MInOut> shipments = Arrays.asList(sourceOrder.getShipments());
-//                if(isDelivered) {
-//                	ProcessBuilder
-//	                	.create(getCtx())
-//	                	.process(InOutGenerate.getProcessId())
-//	                	.withTitle(InOutGenerate.getProcessName())
-//	                	.withParameter(InOutGenerate.M_WAREHOUSE_ID, sourceOrder.getM_Warehouse_ID())
-//	                	.withParameter(InOutGenerate.DOCACTION, DocAction.ACTION_Complete)
-//	                	.withSelectedRecordsIds(I_C_Order.Table_ID, Arrays.asList(returnOrder.getC_Order_ID()))
-//	                	.withoutTransactionClose()
-//	                	.execute(get_TrxName());
-//                }
+                MOrder sourceOrder = null;
+                if(order.getC_OrderSource_ID() != 0) {
+                	sourceOrder = (MOrder) order.getC_OrderSource();
+                }
+                //	Validate source order
+                if(sourceOrder != null) {
+                  List<MInOut> shipments = Arrays.asList(sourceOrder.getShipments());
+                  if(shipments.size() > 0) {
+                  	ProcessBuilder
+  	                	.create(commandReceiver.getCtx())
+  	                	.process(InOutGenerate.getProcessId())
+  	                	.withTitle(InOutGenerate.getProcessName())
+  	                	.withParameter(InOutGenerate.M_WAREHOUSE_ID, sourceOrder.getM_Warehouse_ID())
+  	                	.withParameter(InOutGenerate.DOCACTION, DocAction.ACTION_Complete)
+  	                	.withSelectedRecordsIds(I_C_Order.Table_ID, Arrays.asList(order.getC_Order_ID()))
+  	                	.withoutTransactionClose()
+  	                	.execute(trxName);
+                  }
+                }
                 //	Generate Invoice
                 ProcessInfo invoiceInformation = null;
                 invoiceInformation = ProcessBuilder
