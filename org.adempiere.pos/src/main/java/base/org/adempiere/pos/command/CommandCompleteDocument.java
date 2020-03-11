@@ -21,8 +21,12 @@ import java.util.List;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.I_C_Order;
+import org.compiere.model.MBankStatement;
 import org.compiere.model.MInOut;
+import org.compiere.model.MInvoice;
 import org.compiere.model.MOrder;
+import org.compiere.model.MPOS;
+import org.compiere.model.MPayment;
 import org.compiere.process.DocAction;
 import org.compiere.process.InOutGenerate;
 import org.compiere.process.InvoiceGenerate;
@@ -55,8 +59,8 @@ public class CommandCompleteDocument extends CommandAbstract implements Command 
                 processInformation.setSummary("@C_Order_ID@: " + order.getDocumentNo() + " @Completed@");
                 //	Generate Return
                 MOrder sourceOrder = null;
-                if(order.getC_OrderSource_ID() != 0) {
-                	sourceOrder = (MOrder) order.getC_OrderSource();
+                if(order.getRef_Order_ID() != 0) {
+                	sourceOrder = (MOrder) order.getRef_Order();
                 }
                 //	Validate source order
                 if(sourceOrder != null) {
@@ -89,8 +93,51 @@ public class CommandCompleteDocument extends CommandAbstract implements Command 
                 		|| invoiceInformation.getRecord_ID() == 0) {
                 	throw new AdempiereException("@C_Invoice_ID@ @NotFound@");
                 }
+                //	get credit memo
+                MInvoice creditMemo = new MInvoice(commandReceiver.getCtx(), invoiceInformation.getRecord_ID(), trxName);
+                //	Create return
+                createPayment(commandReceiver, MPayment.TENDERTYPE_CreditMemo, order, creditMemo.getDocumentNo(), trxName);
                 commandReceiver.setProcessInfo(processInformation);
             }
         });
     }
+    
+	/**
+	 * Payment with reference No
+	 * @param amount
+	 * @param currencyId
+	 * @param referenceNo
+	 * @return true if payment processed correctly; otherwise false
+	 */
+	private MPayment createPayment(CommandReceiver commandReceiver, String tenderType, MOrder order, String referenceNo, String transactionName) {
+		MPayment payment = new MPayment(commandReceiver.getCtx(), 0, transactionName);
+		MPOS pos = MPOS.get(commandReceiver.getCtx(), commandReceiver.getPOSId());
+		payment.setAD_Org_ID(order.getAD_Org_ID());
+		payment.setC_POS_ID(commandReceiver.getPOSId());
+		payment.setTenderType(tenderType);
+		payment.setIsReceipt(false);
+		payment.setC_Order_ID(commandReceiver.getOrderId());
+		payment.setIsPrepayment(true);
+		payment.setC_BPartner_ID(commandReceiver.getPartnerId());
+		payment.setDateTrx(order.getDateOrdered());
+		payment.setDateAcct(order.getDateOrdered());
+		payment.setCreditCardType(null);
+		payment.setC_CashBook_ID(pos.getC_CashBook_ID());
+		payment.setAmount(order.getC_Currency_ID(), order.getGrandTotal());
+		int conversionTypeId = pos.getC_ConversionType_ID();
+		if(conversionTypeId > 0) {
+			payment.setC_ConversionType_ID(conversionTypeId);
+		}
+		payment.setC_BankAccount_ID(pos.getC_BankAccount_ID());
+		payment.setDocumentNo(referenceNo);
+		payment.saveEx();
+		payment.setDocAction(MPayment.DOCACTION_Complete);
+		payment.setDocStatus(MPayment.DOCSTATUS_Drafted);
+		if(payment.processIt(MPayment.DOCACTION_Complete)) {
+			payment.saveEx();
+			MBankStatement.addPayment(payment);
+			return payment;
+		}
+		return null;
+	} // payDirectDebit
 }

@@ -252,7 +252,7 @@ public class ReverseTheSalesTransaction extends ReverseTheSalesTransactionAbstra
     	}
         //	Set references
 		target.setC_BPartner_ID(getBPartnerId());
-		target.setC_OrderSource_ID(source.getC_Order_ID());
+		target.setRef_Order_ID(source.getC_Order_ID());
 		target.setProcessed(false);
 		target.saveEx();
 		return target;

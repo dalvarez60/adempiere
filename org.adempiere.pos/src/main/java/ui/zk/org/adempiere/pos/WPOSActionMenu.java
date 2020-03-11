@@ -93,11 +93,6 @@ public class WPOSActionMenu implements  POSQueryListener, EventListener{
     {
         if (command.getCommand() == CommandManager.GENERATE_IMMEDIATE_INVOICE) {
         	executeCommand(command);
-//            if (pos.isCompleted()) {
-//                queryPartner = new WQueryBPartner(pos);
-//                AEnv.showWindow(queryPartner);
-//                queryPartner.addOptionListener(this);
-//                queryPartner.showView();
 //            }
         } else if (command.getCommand() == CommandManager.GENERATE_REVERSE_SALES) {
             if (pos.isCompleted())
@@ -121,8 +116,7 @@ public class WPOSActionMenu implements  POSQueryListener, EventListener{
     	
     }
 
-    private void executeCommand(Command command)
-    {
+    public void executeCommand(Command command) {
         BusyDialog waiting = new BusyDialog();
         try {
             CommandReceiver receiver = commandManager.getCommandReceivers(command.getEvent());

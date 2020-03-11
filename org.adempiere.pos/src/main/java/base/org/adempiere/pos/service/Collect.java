@@ -21,12 +21,13 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.compiere.model.MAllocationHdr;
+import org.compiere.model.MAllocationLine;
 import org.compiere.model.MBankStatement;
 import org.compiere.model.MInvoice;
 import org.compiere.model.MOrder;
 import org.compiere.model.MPOS;
 import org.compiere.model.MPayment;
-import org.compiere.model.MPaymentAllocate;
 import org.compiere.model.MPaymentProcessor;
 import org.compiere.model.MSysConfig;
 import org.compiere.model.X_C_Payment;
@@ -350,7 +351,7 @@ public class Collect {
 			payment.setC_BankAccount_ID(entityPOS.getC_BankAccount_ID());
 
 		payment.setAmount(currencyId, amount);
-		int conversionTypeId = entityPOS.get_ValueAsInt("C_ConversionType_ID");
+		int conversionTypeId = entityPOS.getC_ConversionType_ID();
 		if(conversionTypeId > 0) {
 			payment.setC_ConversionType_ID(conversionTypeId);
 		}
@@ -382,7 +383,7 @@ public class Collect {
 		MPayment payment = createPayment(MPayment.TENDERTYPE_Check);
 		payment.setC_CashBook_ID(entityPOS.getC_CashBook_ID());
 		payment.setAmount(currencyId, amount);
-		int conversionTypeId = entityPOS.get_ValueAsInt("C_ConversionType_ID");
+		int conversionTypeId = entityPOS.getC_ConversionType_ID();
 		if(conversionTypeId > 0) {
 			payment.setC_ConversionType_ID(conversionTypeId);
 		}
@@ -417,7 +418,7 @@ public class Collect {
 		MPayment payment = createPayment(MPayment.TENDERTYPE_DirectDebit);
 		payment.setC_CashBook_ID(entityPOS.getC_CashBook_ID());
 		payment.setAmount(currencyId, amount);
-		int conversionTypeId = entityPOS.get_ValueAsInt("C_ConversionType_ID");
+		int conversionTypeId = entityPOS.getC_ConversionType_ID();
 		if(conversionTypeId > 0) {
 			payment.setC_ConversionType_ID(conversionTypeId);
 		}
@@ -450,7 +451,7 @@ public class Collect {
 		MPayment payment = createPayment(tenderType);
 		payment.setC_CashBook_ID(entityPOS.getC_CashBook_ID());
 		payment.setAmount(currencyId, amount);
-		int conversionTypeId = entityPOS.get_ValueAsInt("C_ConversionType_ID");
+		int conversionTypeId = entityPOS.getC_ConversionType_ID();
 		if(conversionTypeId > 0) {
 			payment.setC_ConversionType_ID(conversionTypeId);
 		}
@@ -482,7 +483,7 @@ public class Collect {
 
 		MPayment payment = createPayment(MPayment.TENDERTYPE_CreditCard);
 		payment.setAmount(currencyId, amount);
-		int conversionTypeId = entityPOS.get_ValueAsInt("C_ConversionType_ID");
+		int conversionTypeId = entityPOS.getC_ConversionType_ID();
 		if(conversionTypeId > 0) {
 			payment.setC_ConversionType_ID(conversionTypeId);
 		}
@@ -518,42 +519,63 @@ public class Collect {
 	 * @return true if payment processed correctly; otherwise false
 	 * 
 	 */
-	public boolean payCreditMemo(MInvoice creditNote, BigDecimal amount) {
+	public boolean payCreditMemo(MInvoice creditMemo, BigDecimal amount) {
 		int invoiceId = order.getC_Invoice_ID();
 		if(invoiceId == 0)
 			return false;
-		MPayment payment = createPayment(MPayment.TENDERTYPE_Account);
-		if(payment.getC_Invoice_ID() > 0 )
+		MPayment payment = createPayment(MPayment.TENDERTYPE_CreditMemo);
+		if(payment.getC_Invoice_ID() > 0) {
 			payment.setC_Invoice_ID(0);
-		if(payment.getC_Order_ID() > 0 )
-			payment.setC_Order_ID(0);
-		if(payment.getC_Charge_ID() > 0 )
+		}
+		if(payment.getC_Charge_ID() > 0) {
 			payment.setC_Charge_ID(0);
-		
-		payment.setAmount(order.getC_Currency_ID(), Env.ZERO);
+		}
+		payment.setAmount(creditMemo.getC_Currency_ID(), amount);
 		payment.setC_BankAccount_ID(entityPOS.getC_BankAccount_ID());
 		payment.setDateTrx(getDateTrx());
 		payment.setDateAcct(getDateTrx());
+		payment.setDocumentNo(creditMemo.getDocumentNo());
 		payment.saveEx();
-		//Invoice
-		MPaymentAllocate paymentAllocate = new MPaymentAllocate(Env.getCtx(), 0, trxName);
-		paymentAllocate.setC_Payment_ID(payment.getC_Payment_ID());
-		paymentAllocate.setC_Invoice_ID(invoiceId);
-		paymentAllocate.setInvoiceAmt(amount);
-		paymentAllocate.setAmount(amount);
-		paymentAllocate.saveEx();
-		//CreditNote
-		paymentAllocate = new MPaymentAllocate(Env.getCtx(), 0, trxName);
-		paymentAllocate.setC_Payment_ID(payment.getC_Payment_ID());
-		paymentAllocate.setC_Invoice_ID(creditNote.getC_Invoice_ID());
-		paymentAllocate.setAmount(amount.negate());
-		paymentAllocate.setInvoiceAmt(amount.negate());
-		paymentAllocate.saveEx();
-		
+		//	
 		payment.setDocAction(MPayment.DOCACTION_Complete);
 		payment.setDocStatus(MPayment.DOCSTATUS_Drafted);
 		if(payment.processIt(MPayment.DOCACTION_Complete)) {
+			//	Set order as by pass
 			payment.saveEx();
+			//	Generate allocation
+			if(creditMemo.getC_Order_ID() != 0) {
+				List<MPayment> paymentsList = MPayment.getOfOrder(Env.getCtx(), creditMemo.getC_Order_ID(), trxName);
+				if(paymentsList.size() > 0) {
+					MAllocationHdr allocation = new MAllocationHdr(Env.getCtx(), true, getDateTrx(), creditMemo.getC_Currency_ID(), creditMemo.getDescription(),trxName);
+					
+					allocation.setDocStatus(MAllocationHdr.STATUS_Drafted);
+					allocation.setDocAction(MAllocationHdr.ACTION_Complete);
+					allocation.saveEx();
+					paymentsList.forEach(returnCollect -> {
+						MAllocationLine allocationLine = new MAllocationLine(allocation);
+						allocationLine.setPaymentInfo(returnCollect.getC_Payment_ID(), 0);
+						allocationLine.setDocInfo(creditMemo.getC_BPartner_ID(), creditMemo.getC_Order_ID(), 0);
+						allocationLine.setAmount(returnCollect.getPayAmt().negate());
+						allocationLine.saveEx();
+					});
+					//	Add line for payment
+					MAllocationLine allocationLine = new MAllocationLine(allocation);
+					allocationLine.setPaymentInfo(payment.getC_Payment_ID(), 0);
+					allocationLine.setDocInfo(payment.getC_BPartner_ID(), payment.getC_Order_ID(), 0);
+					allocationLine.setAmount(payment.getPayAmt());
+					allocationLine.saveEx();
+					//	Validate and complete allocation
+					allocation.processIt(MAllocationHdr.ACTION_Complete);
+					allocation.saveEx();
+					//	Test Allocation
+					payment.testAllocation();
+					payment.saveEx();
+					paymentsList.forEach(returnCollect -> {
+						returnCollect.testAllocation();
+						returnCollect.saveEx();
+					});
+				}
+			}
 			MBankStatement.addPayment(payment);
 			return true;
 		} else {
@@ -801,7 +823,7 @@ public class Collect {
 				}
 				result= payCreditMemo(collectDetail.getM_InvCreditMemo(), collectDetail.getPayAmt());
 				if (!result) {					
-					addErrorMsg("@POS.ErrorPaymentCreditMEmo@");
+					addErrorMsg("@POS.ErrorPaymentCreditMemo@");
 					return;
 				}
 			} else {

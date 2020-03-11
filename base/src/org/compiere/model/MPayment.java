@@ -1376,9 +1376,9 @@ public final class MPayment extends X_C_Payment
 			String isSOTrxAsString = DB.getSQLValueString(get_TrxName(), "SELECT "
 					+ "CASE "
 					+ "	WHEN o.IsSOTrx = 'Y' AND (dt.DocSubTypeSO IS NULL OR dt.DocSubTypeSO <> 'RM') THEN 'Y' "
-					+ "	WHEN o.IsSOTrx = 'N' AND dt.DocSubTypeSO IS NOT NULL AND dt.DocSubTypeSO = 'RM') THEN 'Y' "
+					+ "	WHEN o.IsSOTrx = 'N' AND (dt.DocSubTypeSO IS NOT NULL AND dt.DocSubTypeSO = 'RM') THEN 'Y' "
 					+ "	ELSE 'N' "
-					+ "END"
+					+ "END "
 					+ "FROM C_Order o "
 					+ "INNER JOIN C_DocType dt ON(o.C_DocType_ID = dt.C_DocType_ID) "
 					+ "WHERE o.C_Order_ID = ?", getC_Order_ID());  

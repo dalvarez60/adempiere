@@ -301,13 +301,12 @@ public class WCollectDetail extends CollectDetail implements EventListener, POSP
 		
 		Rows rows = v_ReferencePanel.newRows();
 		Row row = rows.newRow();
-
+		row.setSpans("1,2");
 		fReferenceNo = new WPOSTextField(Msg.translate(p_ctx, "ReferenceNo"), keyboard);
 		row.appendChild(fReferenceNo);
 		fReferenceNo.addEventListener(Events.ON_FOCUS, this);
 		fReferenceNo.setStyle(HEIGHT+WIDTH+FONT_SIZE);
 		row.appendChild(bank);
-		row.appendChild(fReferenceNo);
 	}
 
 	/**

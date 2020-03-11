@@ -79,7 +79,7 @@ public class CommandManager {
     {
         return commands.values()
                 .stream()
-                .filter(action -> action.getEvent() == event)
+                .filter(action -> action.getEvent().equals(event))
                 .findFirst()
                 .orElseThrow(() -> new AdempierePOSException(event + " @NotFound@"));
     }
@@ -88,7 +88,7 @@ public class CommandManager {
     {
         return receivers.values()
                 .stream()
-                .filter(action -> action.getEvent() == event)
+                .filter(action -> action.getEvent().equals(event))
                 .findFirst()
                 .orElseThrow(() -> new AdempierePOSException(event + " @NotFound@ "));
     }

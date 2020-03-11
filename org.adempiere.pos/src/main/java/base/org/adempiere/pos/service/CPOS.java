@@ -70,7 +70,9 @@ import org.compiere.model.MWarehouse;
 import org.compiere.model.Query;
 import org.compiere.model.X_C_Order;
 import org.compiere.process.DocAction;
+import org.compiere.process.InOutGenerate;
 import org.compiere.process.InOutGenerateAbstract;
+import org.compiere.process.InvoiceGenerate;
 import org.compiere.process.ProcessInfo;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
@@ -1411,7 +1413,7 @@ public class CPOS {
         //Generate Return using InOutGenerate
         ProcessInfo processInfo = ProcessBuilder
                 .create(getCtx())
-                .process(199)
+                .process(InOutGenerate.getProcessId())
                 .withParameter(MOrder.COLUMNNAME_M_Warehouse_ID, getM_Warehouse_ID())
                 .withParameter("Selection", true)
                 .withSelectedRecordsIds(MOrder.Table_ID , selectionIds)
@@ -1443,7 +1445,7 @@ public class CPOS {
                //Generate Credit note InvoiceGenerate
                processInfo = ProcessBuilder
                        .create(getCtx())
-                       .process(134)
+                       .process(InvoiceGenerate.getProcessId())
                        .withTitle(processInfo.getTitle())
                        .withParameter("Selection", true)
                        .withSelectedRecordsIds(MOrder.Table_ID , selectionIds)
@@ -1499,7 +1501,7 @@ public class CPOS {
 		//Generate InvoiceGenerate
 		ProcessInfo processInfo = ProcessBuilder
 				.create(getCtx())
-				.process(134)
+				.process(InvoiceGenerate.getProcessId())
 				.withTitle(Msg.parseTranslation(getCtx(), "@InvGenerateGen@"))
 				.withParameter("Selection", true)
 				.withParameter(MInvoice.COLUMNNAME_DocAction, DocAction.ACTION_Complete)
