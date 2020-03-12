@@ -639,8 +639,7 @@ public class CPOS {
 	 * @return String
 	 */
 	public String getSalesRepName() {
-		if (currentOrder != null && currentOrder.getC_BPartner().getSalesRep_ID() !=0)
-		{
+		if (currentOrder != null && currentOrder.getC_BPartner().getSalesRep_ID() !=0) {
 			String salesRepName = currentOrder.getC_BPartner().getSalesRep().getName();
 			return salesRepName;
 		}
@@ -949,7 +948,7 @@ public class CPOS {
 	 * @param priceEntered
 	 * @param priceList
      * @param discountPercentage
-	 * @return
+	 * @return BigDecimal[] {lineNetAmt, taxRate, grandTotal}
      */
 	public BigDecimal [] updateLine(int orderLineId,
 									BigDecimal qtyOrdered,
@@ -1176,26 +1175,10 @@ public class CPOS {
 					+ "AND o.C_POS_ID = ? "
 					+ "AND o.SalesRep_ID = ? "
 					+ "ORDER BY o.Updated");
-		PreparedStatement preparedStatement = null;
-		ResultSet resultSet = null;
 		orderList = new ArrayList<Integer>();
-		try {
-			//	Set Parameter
-			preparedStatement= DB.prepareStatement(sql, null);
-			preparedStatement.setInt (1, Env.getAD_Client_ID(Env.getCtx()));
-			preparedStatement.setInt (2, getC_POS_ID());
-			preparedStatement.setInt (3, getSalesRep_ID());
-			//	Execute
-			resultSet = preparedStatement.executeQuery();
-			//	Add to List
-			while(resultSet.next()){
-				orderList.add(resultSet.getInt(1));
-			}
-		} catch(Exception e) {
-			log.severe("SubOrder.listOrder: " + e + " -> " + sql);
-		} finally {
-			DB.close(resultSet);
-			DB.close(preparedStatement);
+		int[] orderIds = DB.getIDsEx(null, sql, Env.getAD_Client_ID(Env.getCtx()), getC_POS_ID(), getSalesRep_ID());
+		for(int orderId : orderIds) {
+			orderList.add(orderId);
 		}
 		//	Seek Position
 		if(hasRecord())
