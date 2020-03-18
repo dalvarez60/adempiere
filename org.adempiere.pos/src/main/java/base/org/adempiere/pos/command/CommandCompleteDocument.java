@@ -22,6 +22,7 @@ import java.util.List;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.I_C_Order;
 import org.compiere.model.MBankStatement;
+import org.compiere.model.MDocType;
 import org.compiere.model.MInOut;
 import org.compiere.model.MInvoice;
 import org.compiere.model.MOrder;
@@ -33,6 +34,7 @@ import org.compiere.process.InvoiceGenerate;
 import org.compiere.process.ProcessInfo;
 import org.compiere.util.Trx;
 import org.compiere.util.TrxRunnable;
+import org.compiere.util.Util;
 import org.eevolution.service.dsl.ProcessBuilder;
 
 /**
@@ -57,47 +59,52 @@ public class CommandCompleteDocument extends CommandAbstract implements Command 
                 order.saveEx();
                 ProcessInfo processInformation = new ProcessInfo("Complete Order", 0, I_C_Order.Table_ID, order.getC_Order_ID());
                 processInformation.setSummary("@C_Order_ID@: " + order.getDocumentNo() + " @Completed@");
-                //	Generate Return
-                MOrder sourceOrder = null;
-                if(order.getRef_Order_ID() != 0) {
-                	sourceOrder = (MOrder) order.getRef_Order();
+                //	Validate return
+                MDocType documentType = MDocType.get(commandReceiver.getCtx(), order.getC_DocType_ID());
+                if(!Util.isEmpty(documentType.getDocSubTypeSO())
+                		&& documentType.getDocSubTypeSO().equals(MOrder.DocSubTypeSO_RMA)) {
+                    //	Generate Return
+                    MOrder sourceOrder = null;
+                    if(order.getRef_Order_ID() != 0) {
+                    	sourceOrder = (MOrder) order.getRef_Order();
+                    }
+                    //	Validate source order
+                    if(sourceOrder != null) {
+                      List<MInOut> shipments = Arrays.asList(sourceOrder.getShipments());
+                      if(shipments.size() > 0) {
+                      	ProcessBuilder
+      	                	.create(commandReceiver.getCtx())
+      	                	.process(InOutGenerate.getProcessId())
+      	                	.withTitle(InOutGenerate.getProcessName())
+      	                	.withParameter(InOutGenerate.M_WAREHOUSE_ID, sourceOrder.getM_Warehouse_ID())
+      	                	.withParameter(InOutGenerate.DOCACTION, DocAction.ACTION_Complete)
+      	                	.withSelectedRecordsIds(I_C_Order.Table_ID, Arrays.asList(order.getC_Order_ID()))
+      	                	.withoutTransactionClose()
+      	                	.execute(trxName);
+                      }
+                    }
+                    //	Generate Invoice
+                    ProcessInfo invoiceInformation = null;
+                    invoiceInformation = ProcessBuilder
+                        	.create(commandReceiver.getCtx())
+                        	.process(InvoiceGenerate.getProcessId())
+                        	.withTitle(InvoiceGenerate.getProcessName())
+                        	.withParameter(InvoiceGenerate.AD_ORG_ID, order.getAD_Org_ID())
+                        	.withParameter(InvoiceGenerate.C_ORDER_ID, order.getC_Order_ID())
+                        	.withParameter(InvoiceGenerate.DOCACTION, DocAction.ACTION_Complete)
+                        	.withoutTransactionClose()
+                        	.execute(trxName);
+                    //	Validate Credit Memo
+                    if(invoiceInformation == null
+                    		|| invoiceInformation.getRecord_ID() == 0) {
+                    	throw new AdempiereException("@C_Invoice_ID@ @NotFound@");
+                    }
+                    //	get credit memo
+                    MInvoice creditMemo = new MInvoice(commandReceiver.getCtx(), invoiceInformation.getRecord_ID(), trxName);
+                    //	Create return
+                    createPayment(commandReceiver, MPayment.TENDERTYPE_CreditMemo, order, creditMemo.getDocumentNo(), trxName);
+                    commandReceiver.setProcessInfo(processInformation);
                 }
-                //	Validate source order
-                if(sourceOrder != null) {
-                  List<MInOut> shipments = Arrays.asList(sourceOrder.getShipments());
-                  if(shipments.size() > 0) {
-                  	ProcessBuilder
-  	                	.create(commandReceiver.getCtx())
-  	                	.process(InOutGenerate.getProcessId())
-  	                	.withTitle(InOutGenerate.getProcessName())
-  	                	.withParameter(InOutGenerate.M_WAREHOUSE_ID, sourceOrder.getM_Warehouse_ID())
-  	                	.withParameter(InOutGenerate.DOCACTION, DocAction.ACTION_Complete)
-  	                	.withSelectedRecordsIds(I_C_Order.Table_ID, Arrays.asList(order.getC_Order_ID()))
-  	                	.withoutTransactionClose()
-  	                	.execute(trxName);
-                  }
-                }
-                //	Generate Invoice
-                ProcessInfo invoiceInformation = null;
-                invoiceInformation = ProcessBuilder
-                    	.create(commandReceiver.getCtx())
-                    	.process(InvoiceGenerate.getProcessId())
-                    	.withTitle(InvoiceGenerate.getProcessName())
-                    	.withParameter(InvoiceGenerate.AD_ORG_ID, order.getAD_Org_ID())
-                    	.withParameter(InvoiceGenerate.C_ORDER_ID, order.getC_Order_ID())
-                    	.withParameter(InvoiceGenerate.DOCACTION, DocAction.ACTION_Complete)
-                    	.withoutTransactionClose()
-                    	.execute(trxName);
-                //	Validate Credit Memo
-                if(invoiceInformation == null
-                		|| invoiceInformation.getRecord_ID() == 0) {
-                	throw new AdempiereException("@C_Invoice_ID@ @NotFound@");
-                }
-                //	get credit memo
-                MInvoice creditMemo = new MInvoice(commandReceiver.getCtx(), invoiceInformation.getRecord_ID(), trxName);
-                //	Create return
-                createPayment(commandReceiver, MPayment.TENDERTYPE_CreditMemo, order, creditMemo.getDocumentNo(), trxName);
-                commandReceiver.setProcessInfo(processInformation);
             }
         });
     }

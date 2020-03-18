@@ -107,6 +107,8 @@ public class WPOSActionMenu implements  POSQueryListener, EventListener{
             executeCommand(command);
         } else if (command.getCommand() == CommandManager.CLOSE_STATEMENT) {
             executeCommand(command);
+        } else if (command.getCommand() == CommandManager.PRINT_DOCUMENT) {
+            executeCommand(command);
         } else {
         	FDialog.info(pos.getWindowNo(), popupMenu, "DocProcessed", pos.getDocumentNo());
         }
@@ -269,6 +271,12 @@ public class WPOSActionMenu implements  POSQueryListener, EventListener{
                         pos.printTicket();
                     }
                 }
+            } else if(command.getCommand() == CommandManager.PRINT_DOCUMENT
+                    && pos.getC_Order_ID() > 0
+                    && pos.isCompleted()
+                    && pos.isInvoiced()) {
+            	//	Print Ticket
+                pos.printTicket();
             }
         }
         catch (Exception exception)
