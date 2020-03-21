@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.util.DB;
@@ -183,7 +184,7 @@ import org.compiere.util.Msg;
 	 *	@param payment payment
 	 */
 	public void setPayment (MPayment payment) {
-        BigDecimal paymentAmount = payment.getPayAmt(true);
+		AtomicReference<BigDecimal> paymentAmount = new AtomicReference<BigDecimal>(payment.getPayAmt(true));
         int currencyId = payment.getC_Currency_ID();
         
         MBankAccount bankAccount = MBankAccount.get(getCtx(), getParent().getC_BankAccount_ID());
@@ -194,11 +195,12 @@ import org.compiere.util.Msg;
             Timestamp conversionDate = getParent().getStatementDate();
     
             // Get Currency Rate
-            Optional<BigDecimal> maybeCurrencyRate = Optional.ofNullable(MConversionRate.getRate (payment.getC_Currency_ID(),
+            BigDecimal currencyRate = Optional.ofNullable(MConversionRate.getRate (payment.getC_Currency_ID(),
                     bankAccount.getC_Currency_ID(), conversionDate, payment.getC_ConversionType_ID(), payment.getAD_Client_ID(),
-                    payment.getAD_Org_ID()));
-			maybeCurrencyRate.ifPresent(currencyRate -> paymentAmount.multiply(currencyRate)
-					.setScale(currency.getStdPrecision(), BigDecimal.ROUND_HALF_UP));
+                    payment.getAD_Org_ID()))
+            		.orElseThrow(() -> new AdempiereException("@C_AcctSchema_Default@ @NotFound@"));
+            //	Set convert amount
+			paymentAmount.updateAndGet(payAmount -> payAmount.multiply(currencyRate).setScale(currency.getStdPrecision(), BigDecimal.ROUND_HALF_UP));
         }
         setC_Payment_ID (payment.getC_Payment_ID());
         setC_Currency_ID (currencyId);
@@ -209,8 +211,8 @@ import org.compiere.util.Msg;
         BigDecimal interestAmt = getInterestAmt();
         if (interestAmt == null)
             interestAmt = Env.ZERO;
-        setTrxAmt(paymentAmount);
-        setStmtAmt(paymentAmount.add(chargeAmt).add(interestAmt));
+        setTrxAmt(paymentAmount.get());
+        setStmtAmt(paymentAmount.get().add(chargeAmt).add(interestAmt));
         //
         setDescription(payment.getDescription());
 	}	//	setPayment
