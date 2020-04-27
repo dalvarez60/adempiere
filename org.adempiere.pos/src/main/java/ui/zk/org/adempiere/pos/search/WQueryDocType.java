@@ -193,7 +193,7 @@ public class WQueryDocType extends WPOSQuery implements POSQueryInterface
 			.append(" WHERE dt.AD_Client_ID = ? AND dt.AD_Org_ID IN (0, ?)")
 			.append(" AND dt.isActive='Y'")
 			.append(" AND dt.DocBaseType='SOO'")
-			.append(" AND dt.DocSubTypeSO IN(?, ?, ?, ?, ?)")
+			.append(" AND dt.DocSubTypeSO IN(?, ?, ?, ?, ?, ?)")
 		    .append(" ORDER BY dt.Name");
 			int i = 1;			
 			preparedStatement = DB.prepareStatement(sql.toString(), null);
@@ -205,6 +205,7 @@ public class WQueryDocType extends WPOSQuery implements POSQueryInterface
 			preparedStatement.setString(i++, MOrder.DocSubTypeSO_Standard);
 			preparedStatement.setString(i++, MOrder.DocSubTypeSO_Prepay);
 			preparedStatement.setString(i++, MOrder.DocSubTypeSO_Warehouse);
+			preparedStatement.setString(i++, MOrder.DocSubTypeSO_InvoiceOrder);
 			//	
 			resultSet = preparedStatement.executeQuery();
 			posTable.loadTable(resultSet);

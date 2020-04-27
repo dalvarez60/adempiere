@@ -23,14 +23,14 @@ import org.compiere.util.KeyNamePair;
 
 /** Generated Model for C_POS
  *  @author Adempiere (generated) 
- *  @version Release 3.9.2 - $Id$ */
+ *  @version Release 3.9.3 - $Id$ */
 public class X_C_POS extends PO implements I_C_POS, I_Persistent 
 {
 
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20191120L;
+	private static final long serialVersionUID = 20200309L;
 
     /** Standard Constructor */
     public X_C_POS (Properties ctx, int C_POS_ID, String trxName)
@@ -97,169 +97,6 @@ public class X_C_POS extends PO implements I_C_POS, I_Persistent
 		return ii.intValue();
 	}
 
-	public org.compiere.model.I_C_BPartner getC_BPartnerCashTrx() throws RuntimeException
-    {
-		return (org.compiere.model.I_C_BPartner)MTable.get(getCtx(), org.compiere.model.I_C_BPartner.Table_Name)
-			.getPO(getC_BPartnerCashTrx_ID(), get_TrxName());	}
-
-	/** Set Template B.Partner.
-		@param C_BPartnerCashTrx_ID 
-		Business Partner used for creating new Business Partners on the fly
-	  */
-	public void setC_BPartnerCashTrx_ID (int C_BPartnerCashTrx_ID)
-	{
-		if (C_BPartnerCashTrx_ID < 1) 
-			set_Value (COLUMNNAME_C_BPartnerCashTrx_ID, null);
-		else 
-			set_Value (COLUMNNAME_C_BPartnerCashTrx_ID, Integer.valueOf(C_BPartnerCashTrx_ID));
-	}
-
-	/** Get Template B.Partner.
-		@return Business Partner used for creating new Business Partners on the fly
-	  */
-	public int getC_BPartnerCashTrx_ID () 
-	{
-		Integer ii = (Integer)get_Value(COLUMNNAME_C_BPartnerCashTrx_ID);
-		if (ii == null)
-			 return 0;
-		return ii.intValue();
-	}
-
-	public org.compiere.model.I_C_BankAccount getC_BankAccount() throws RuntimeException
-    {
-		return (org.compiere.model.I_C_BankAccount)MTable.get(getCtx(), org.compiere.model.I_C_BankAccount.Table_Name)
-			.getPO(getC_BankAccount_ID(), get_TrxName());	}
-
-	/** Set Bank Account.
-		@param C_BankAccount_ID 
-		Account at the Bank
-	  */
-	public void setC_BankAccount_ID (int C_BankAccount_ID)
-	{
-		if (C_BankAccount_ID < 1) 
-			set_Value (COLUMNNAME_C_BankAccount_ID, null);
-		else 
-			set_Value (COLUMNNAME_C_BankAccount_ID, Integer.valueOf(C_BankAccount_ID));
-	}
-
-	/** Get Bank Account.
-		@return Account at the Bank
-	  */
-	public int getC_BankAccount_ID () 
-	{
-		Integer ii = (Integer)get_Value(COLUMNNAME_C_BankAccount_ID);
-		if (ii == null)
-			 return 0;
-		return ii.intValue();
-	}
-
-	public org.compiere.model.I_C_CashBook getC_CashBook() throws RuntimeException
-    {
-		return (org.compiere.model.I_C_CashBook)MTable.get(getCtx(), org.compiere.model.I_C_CashBook.Table_Name)
-			.getPO(getC_CashBook_ID(), get_TrxName());	}
-
-	/** Set Cash Book.
-		@param C_CashBook_ID 
-		Cash Book for recording petty cash transactions
-	  */
-	public void setC_CashBook_ID (int C_CashBook_ID)
-	{
-		if (C_CashBook_ID < 1) 
-			set_Value (COLUMNNAME_C_CashBook_ID, null);
-		else 
-			set_Value (COLUMNNAME_C_CashBook_ID, Integer.valueOf(C_CashBook_ID));
-	}
-
-	/** Get Cash Book.
-		@return Cash Book for recording petty cash transactions
-	  */
-	public int getC_CashBook_ID () 
-	{
-		Integer ii = (Integer)get_Value(COLUMNNAME_C_CashBook_ID);
-		if (ii == null)
-			 return 0;
-		return ii.intValue();
-	}
-
-	public org.compiere.model.I_C_DocType getC_DocType() throws RuntimeException
-    {
-		return (org.compiere.model.I_C_DocType)MTable.get(getCtx(), org.compiere.model.I_C_DocType.Table_Name)
-			.getPO(getC_DocType_ID(), get_TrxName());	}
-
-	/** Set Document Type.
-		@param C_DocType_ID 
-		Document type or rules
-	  */
-	public void setC_DocType_ID (int C_DocType_ID)
-	{
-		if (C_DocType_ID < 0) 
-			set_Value (COLUMNNAME_C_DocType_ID, null);
-		else 
-			set_Value (COLUMNNAME_C_DocType_ID, Integer.valueOf(C_DocType_ID));
-	}
-
-	/** Get Document Type.
-		@return Document type or rules
-	  */
-	public int getC_DocType_ID () 
-	{
-		Integer ii = (Integer)get_Value(COLUMNNAME_C_DocType_ID);
-		if (ii == null)
-			 return 0;
-		return ii.intValue();
-	}
-
-	public org.compiere.model.I_C_POSKeyLayout getC_POSKeyLayout() throws RuntimeException
-    {
-		return (org.compiere.model.I_C_POSKeyLayout)MTable.get(getCtx(), org.compiere.model.I_C_POSKeyLayout.Table_Name)
-			.getPO(getC_POSKeyLayout_ID(), get_TrxName());	}
-
-	/** Set POS Key Layout.
-		@param C_POSKeyLayout_ID 
-		POS Function Key Layout
-	  */
-	public void setC_POSKeyLayout_ID (int C_POSKeyLayout_ID)
-	{
-		if (C_POSKeyLayout_ID < 1) 
-			set_Value (COLUMNNAME_C_POSKeyLayout_ID, null);
-		else 
-			set_Value (COLUMNNAME_C_POSKeyLayout_ID, Integer.valueOf(C_POSKeyLayout_ID));
-	}
-
-	/** Get POS Key Layout.
-		@return POS Function Key Layout
-	  */
-	public int getC_POSKeyLayout_ID () 
-	{
-		Integer ii = (Integer)get_Value(COLUMNNAME_C_POSKeyLayout_ID);
-		if (ii == null)
-			 return 0;
-		return ii.intValue();
-	}
-
-	/** Set POS Terminal.
-		@param C_POS_ID 
-		Point of Sales Terminal
-	  */
-	public void setC_POS_ID (int C_POS_ID)
-	{
-		if (C_POS_ID < 1) 
-			set_ValueNoCheck (COLUMNNAME_C_POS_ID, null);
-		else 
-			set_ValueNoCheck (COLUMNNAME_C_POS_ID, Integer.valueOf(C_POS_ID));
-	}
-
-	/** Get POS Terminal.
-		@return Point of Sales Terminal
-	  */
-	public int getC_POS_ID () 
-	{
-		Integer ii = (Integer)get_Value(COLUMNNAME_C_POS_ID);
-		if (ii == null)
-			 return 0;
-		return ii.intValue();
-	}
-
 	/** Set CashDrawer.
 		@param CashDrawer CashDrawer	  */
 	public void setCashDrawer (String CashDrawer)
@@ -297,6 +134,225 @@ public class X_C_POS extends PO implements I_C_POS, I_Persistent
 	public int getCashTransferBankAccount_ID () 
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_CashTransferBankAccount_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_C_BankAccount getC_BankAccount() throws RuntimeException
+    {
+		return (org.compiere.model.I_C_BankAccount)MTable.get(getCtx(), org.compiere.model.I_C_BankAccount.Table_Name)
+			.getPO(getC_BankAccount_ID(), get_TrxName());	}
+
+	/** Set Bank Account.
+		@param C_BankAccount_ID 
+		Account at the Bank
+	  */
+	public void setC_BankAccount_ID (int C_BankAccount_ID)
+	{
+		if (C_BankAccount_ID < 1) 
+			set_Value (COLUMNNAME_C_BankAccount_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_BankAccount_ID, Integer.valueOf(C_BankAccount_ID));
+	}
+
+	/** Get Bank Account.
+		@return Account at the Bank
+	  */
+	public int getC_BankAccount_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_BankAccount_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_C_BPartner getC_BPartnerCashTrx() throws RuntimeException
+    {
+		return (org.compiere.model.I_C_BPartner)MTable.get(getCtx(), org.compiere.model.I_C_BPartner.Table_Name)
+			.getPO(getC_BPartnerCashTrx_ID(), get_TrxName());	}
+
+	/** Set Template B.Partner.
+		@param C_BPartnerCashTrx_ID 
+		Business Partner used for creating new Business Partners on the fly
+	  */
+	public void setC_BPartnerCashTrx_ID (int C_BPartnerCashTrx_ID)
+	{
+		if (C_BPartnerCashTrx_ID < 1) 
+			set_Value (COLUMNNAME_C_BPartnerCashTrx_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_BPartnerCashTrx_ID, Integer.valueOf(C_BPartnerCashTrx_ID));
+	}
+
+	/** Get Template B.Partner.
+		@return Business Partner used for creating new Business Partners on the fly
+	  */
+	public int getC_BPartnerCashTrx_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_BPartnerCashTrx_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_C_CashBook getC_CashBook() throws RuntimeException
+    {
+		return (org.compiere.model.I_C_CashBook)MTable.get(getCtx(), org.compiere.model.I_C_CashBook.Table_Name)
+			.getPO(getC_CashBook_ID(), get_TrxName());	}
+
+	/** Set Cash Book.
+		@param C_CashBook_ID 
+		Cash Book for recording petty cash transactions
+	  */
+	public void setC_CashBook_ID (int C_CashBook_ID)
+	{
+		if (C_CashBook_ID < 1) 
+			set_Value (COLUMNNAME_C_CashBook_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_CashBook_ID, Integer.valueOf(C_CashBook_ID));
+	}
+
+	/** Get Cash Book.
+		@return Cash Book for recording petty cash transactions
+	  */
+	public int getC_CashBook_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_CashBook_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_C_ConversionType getC_ConversionType() throws RuntimeException
+    {
+		return (org.compiere.model.I_C_ConversionType)MTable.get(getCtx(), org.compiere.model.I_C_ConversionType.Table_Name)
+			.getPO(getC_ConversionType_ID(), get_TrxName());	}
+
+	/** Set Currency Type.
+		@param C_ConversionType_ID 
+		Currency Conversion Rate Type
+	  */
+	public void setC_ConversionType_ID (int C_ConversionType_ID)
+	{
+		if (C_ConversionType_ID < 1) 
+			set_Value (COLUMNNAME_C_ConversionType_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_ConversionType_ID, Integer.valueOf(C_ConversionType_ID));
+	}
+
+	/** Get Currency Type.
+		@return Currency Conversion Rate Type
+	  */
+	public int getC_ConversionType_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_ConversionType_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_C_DocType getC_DocType() throws RuntimeException
+    {
+		return (org.compiere.model.I_C_DocType)MTable.get(getCtx(), org.compiere.model.I_C_DocType.Table_Name)
+			.getPO(getC_DocType_ID(), get_TrxName());	}
+
+	/** Set Document Type.
+		@param C_DocType_ID 
+		Document type or rules
+	  */
+	public void setC_DocType_ID (int C_DocType_ID)
+	{
+		if (C_DocType_ID < 0) 
+			set_Value (COLUMNNAME_C_DocType_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_DocType_ID, Integer.valueOf(C_DocType_ID));
+	}
+
+	/** Get Document Type.
+		@return Document type or rules
+	  */
+	public int getC_DocType_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_DocType_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_C_DocType getC_DocTypeRMA() throws RuntimeException
+    {
+		return (org.compiere.model.I_C_DocType)MTable.get(getCtx(), org.compiere.model.I_C_DocType.Table_Name)
+			.getPO(getC_DocTypeRMA_ID(), get_TrxName());	}
+
+	/** Set Document Type for Return Order.
+		@param C_DocTypeRMA_ID 
+		Document type used for Return Orders generated from this POS
+	  */
+	public void setC_DocTypeRMA_ID (int C_DocTypeRMA_ID)
+	{
+		if (C_DocTypeRMA_ID < 1) 
+			set_Value (COLUMNNAME_C_DocTypeRMA_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_DocTypeRMA_ID, Integer.valueOf(C_DocTypeRMA_ID));
+	}
+
+	/** Get Document Type for Return Order.
+		@return Document type used for Return Orders generated from this POS
+	  */
+	public int getC_DocTypeRMA_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_DocTypeRMA_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	/** Set POS Terminal.
+		@param C_POS_ID 
+		Point of Sales Terminal
+	  */
+	public void setC_POS_ID (int C_POS_ID)
+	{
+		if (C_POS_ID < 1) 
+			set_ValueNoCheck (COLUMNNAME_C_POS_ID, null);
+		else 
+			set_ValueNoCheck (COLUMNNAME_C_POS_ID, Integer.valueOf(C_POS_ID));
+	}
+
+	/** Get POS Terminal.
+		@return Point of Sales Terminal
+	  */
+	public int getC_POS_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_POS_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_C_POSKeyLayout getC_POSKeyLayout() throws RuntimeException
+    {
+		return (org.compiere.model.I_C_POSKeyLayout)MTable.get(getCtx(), org.compiere.model.I_C_POSKeyLayout.Table_Name)
+			.getPO(getC_POSKeyLayout_ID(), get_TrxName());	}
+
+	/** Set POS Key Layout.
+		@param C_POSKeyLayout_ID 
+		POS Function Key Layout
+	  */
+	public void setC_POSKeyLayout_ID (int C_POSKeyLayout_ID)
+	{
+		if (C_POSKeyLayout_ID < 1) 
+			set_Value (COLUMNNAME_C_POSKeyLayout_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_POSKeyLayout_ID, Integer.valueOf(C_POSKeyLayout_ID));
+	}
+
+	/** Get POS Key Layout.
+		@return POS Function Key Layout
+	  */
+	public int getC_POSKeyLayout_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_POSKeyLayout_ID);
 		if (ii == null)
 			 return 0;
 		return ii.intValue();
@@ -413,6 +469,30 @@ public class X_C_POS extends PO implements I_C_POS, I_Persistent
 		return (String)get_Value(COLUMNNAME_InvoiceRule);
 	}
 
+	/** Set Aisle Seller.
+		@param IsAisleSeller 
+		Aisle Seller or consultant for products without invoice
+	  */
+	public void setIsAisleSeller (boolean IsAisleSeller)
+	{
+		set_Value (COLUMNNAME_IsAisleSeller, Boolean.valueOf(IsAisleSeller));
+	}
+
+	/** Get Aisle Seller.
+		@return Aisle Seller or consultant for products without invoice
+	  */
+	public boolean isAisleSeller () 
+	{
+		Object oo = get_Value(COLUMNNAME_IsAisleSeller);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
 	/** Set Enable POS Product Lookup.
 		@param IsEnableProductLookup 
 		Allows product lookup in order to show search key , name , quantity available , standard price and list price for selecting a product
@@ -485,6 +565,47 @@ public class X_C_POS extends PO implements I_C_POS, I_Persistent
 		return false;
 	}
 
+	/** Set Is Shared POS.
+		@param IsSharedPOS 
+		Is Shared POS
+	  */
+	public void setIsSharedPOS (boolean IsSharedPOS)
+	{
+		set_Value (COLUMNNAME_IsSharedPOS, Boolean.valueOf(IsSharedPOS));
+	}
+
+	/** Get Is Shared POS.
+		@return Is Shared POS
+	  */
+	public boolean isSharedPOS () 
+	{
+		Object oo = get_Value(COLUMNNAME_IsSharedPOS);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
+	/** Set Measure Request Code.
+		@param MeasureRequestCode 
+		String for  taking measurement from Device Electronic Scales
+	  */
+	public void setMeasureRequestCode (String MeasureRequestCode)
+	{
+		set_Value (COLUMNNAME_MeasureRequestCode, MeasureRequestCode);
+	}
+
+	/** Get Measure Request Code.
+		@return String for  taking measurement from Device Electronic Scales
+	  */
+	public String getMeasureRequestCode () 
+	{
+		return (String)get_Value(COLUMNNAME_MeasureRequestCode);
+	}
+
 	public org.compiere.model.I_M_PriceList getM_PriceList() throws RuntimeException
     {
 		return (org.compiere.model.I_M_PriceList)MTable.get(getCtx(), org.compiere.model.I_M_PriceList.Table_Name)
@@ -539,23 +660,6 @@ public class X_C_POS extends PO implements I_C_POS, I_Persistent
 		if (ii == null)
 			 return 0;
 		return ii.intValue();
-	}
-
-	/** Set Measure Request Code.
-		@param MeasureRequestCode 
-		String for  taking measurement from Device Electronic Scales
-	  */
-	public void setMeasureRequestCode (String MeasureRequestCode)
-	{
-		set_Value (COLUMNNAME_MeasureRequestCode, MeasureRequestCode);
-	}
-
-	/** Get Measure Request Code.
-		@return String for  taking measurement from Device Electronic Scales
-	  */
-	public String getMeasureRequestCode () 
-	{
-		return (String)get_Value(COLUMNNAME_MeasureRequestCode);
 	}
 
 	/** Set Name.
@@ -699,6 +803,34 @@ public class X_C_POS extends PO implements I_C_POS, I_Persistent
 	public int getSalesRep_ID () 
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_SalesRep_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.compiere.model.I_AD_User getSupervisor() throws RuntimeException
+    {
+		return (org.compiere.model.I_AD_User)MTable.get(getCtx(), org.compiere.model.I_AD_User.Table_Name)
+			.getPO(getSupervisor_ID(), get_TrxName());	}
+
+	/** Set Supervisor.
+		@param Supervisor_ID 
+		Supervisor for this user/organization - used for escalation and approval
+	  */
+	public void setSupervisor_ID (int Supervisor_ID)
+	{
+		if (Supervisor_ID < 1) 
+			set_Value (COLUMNNAME_Supervisor_ID, null);
+		else 
+			set_Value (COLUMNNAME_Supervisor_ID, Integer.valueOf(Supervisor_ID));
+	}
+
+	/** Get Supervisor.
+		@return Supervisor for this user/organization - used for escalation and approval
+	  */
+	public int getSupervisor_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_Supervisor_ID);
 		if (ii == null)
 			 return 0;
 		return ii.intValue();

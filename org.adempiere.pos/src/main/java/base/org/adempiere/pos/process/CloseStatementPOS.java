@@ -17,12 +17,19 @@
 package org.adempiere.pos.process;
 
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.model.MBankAccount;
 import org.compiere.model.MBankStatement;
 import org.compiere.model.MBankStatementLine;
+import org.compiere.model.MOrg;
+import org.compiere.model.MPOS;
 import org.compiere.model.MPayment;
 import org.compiere.process.DocAction;
+import org.compiere.util.Env;
 import org.compiere.util.Msg;
+import org.compiere.util.Util;
 
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -55,7 +62,8 @@ public class CloseStatementPOS extends CloseStatementPOSAbstract {
             // Generate Lost or Profit
             generateLostOrProfit();
         }
-
+        //	Create Withdrawal
+        createWithdrawal();
         // Close Bank Statement
         closeBankStatements();
         return "@Ok@";
@@ -63,21 +71,103 @@ public class CloseStatementPOS extends CloseStatementPOSAbstract {
 
     private void closeBankStatements() {
         getBankStatements().entrySet().stream().forEach( entry -> {
-            MBankStatement bankStatement =  entry.getValue();
+            MBankStatement bankStatement = entry.getValue();
             bankStatement.processIt(DocAction.ACTION_Complete);
             bankStatement.saveEx();
         });
     }
 
     private void generateLostOrProfit() {
-        MBankStatement bankStatement = (MBankStatement) getBankStatements().entrySet().iterator().next();
+        MBankStatement bankStatement = getBankStatements().entrySet().iterator().next().getValue();
         MBankStatementLine bankStatementLine = new MBankStatementLine(bankStatement);
         bankStatementLine.setDateAcct(getTransactionDate());
         bankStatementLine.setStatementLineDate(getTransactionDateTo());
-        bankStatementLine.setStmtAmt(getDifference());
+        bankStatementLine.setStmtAmt(getDifference().multiply(new BigDecimal(-1)));
         bankStatementLine.setC_Charge_ID(getChargeId());
-        bankStatementLine.setChargeAmt(getDifference());
+        bankStatementLine.setChargeAmt(getDifference().multiply(new BigDecimal(-1)));
         bankStatementLine.saveEx();
+    }
+    
+    /**
+     * Create Withdrawal
+     */
+    private void createWithdrawal() {
+    	BigDecimal payAmt = getPaidAmount();
+    	BigDecimal beginningBalance = getParameterAsBigDecimal("BeginningBalance");
+    	String tenderType = getParameterAsString("TenderType");
+    	int withdrawalChargeId = getParameterAsInt("WithdrawalCharge_ID");
+    	String description = getParameterAsString("Description");
+    	Timestamp openingDate = getParameterAsTimestamp("OpeningDate");
+    	if(withdrawalChargeId <= 0
+    			|| payAmt == null 
+    			|| beginningBalance == null
+    			|| beginningBalance.doubleValue() == 0) {
+    		return;
+    	}
+    	MPOS pos = MPOS.get(getCtx(), getPOSTerminalId());
+    	MBankAccount bankAccountFrom = MBankAccount.get(getCtx(), getBankAccountId());
+    	MOrg org = MOrg.get(getCtx(), bankAccountFrom.getAD_Org_ID());
+		int linkedBPartnerId = org.getLinkedC_BPartner_ID(get_TrxName());
+		if (linkedBPartnerId == 0) {
+			throw new AdempiereException("@LinkedC_BPartner_ID@ @of@ " + org.getName() + " @NotFound@");
+		}
+		if(openingDate == null) {
+			throw new AdempiereException("@OpeningDate@ @NotFound@");
+		}
+    	//	
+    	if(Util.isEmpty(tenderType)) {
+    		tenderType = MPayment.TENDERTYPE_DirectDeposit;
+    	}
+    	if(Util.isEmpty(description)) {
+    		description = Msg.parseTranslation(getCtx(), "@Withdrawal@ @POS@");
+    	}
+    	//	
+    	MPayment paymentBankFrom = new MPayment(getCtx(), 0 ,  get_TrxName());
+		paymentBankFrom.setC_BankAccount_ID(getBankAccountId());
+		paymentBankFrom.setDateAcct(getTransactionDateTo());
+		paymentBankFrom.setDateTrx(getTransactionDateTo());
+		paymentBankFrom.setTenderType(tenderType);
+		paymentBankFrom.setDescription(description);
+		paymentBankFrom.setC_BPartner_ID (linkedBPartnerId);
+		paymentBankFrom.setC_Currency_ID(bankAccountFrom.getC_Currency_ID());
+		paymentBankFrom.setPayAmt(beginningBalance);
+		paymentBankFrom.setOverUnderAmt(Env.ZERO);
+		paymentBankFrom.setC_DocType_ID(false);
+		paymentBankFrom.setC_Charge_ID(withdrawalChargeId);
+		paymentBankFrom.setC_POS_ID(getPOSTerminalId());
+		if(tenderType.equals(MPayment.TENDERTYPE_Cash)) {
+			paymentBankFrom.setC_CashBook_ID(pos.getC_CashBook_ID());
+		}
+		paymentBankFrom.saveEx();
+		//	
+		MPayment paymentBankTo = new MPayment(getCtx(), 0 ,  get_TrxName());
+		paymentBankTo.setC_BankAccount_ID(getBankAccountId());
+		paymentBankTo.setDateAcct(openingDate);
+		paymentBankTo.setDateTrx(openingDate);
+		paymentBankTo.setTenderType(tenderType);
+		paymentBankTo.setDescription(description);
+		paymentBankTo.setC_BPartner_ID (linkedBPartnerId);
+		paymentBankTo.setC_Currency_ID(bankAccountFrom.getC_Currency_ID());
+		paymentBankTo.setPayAmt(beginningBalance);
+		paymentBankTo.setOverUnderAmt(Env.ZERO);
+		paymentBankTo.setC_DocType_ID(true);
+		paymentBankTo.setC_Charge_ID(withdrawalChargeId);
+		paymentBankTo.setC_POS_ID(getPOSTerminalId());
+		if(tenderType.equals(MPayment.TENDERTYPE_Cash)) {
+			paymentBankTo.setC_CashBook_ID(pos.getC_CashBook_ID());
+		}
+		paymentBankTo.saveEx();
+
+		paymentBankFrom.setRelatedPayment_ID(paymentBankTo.getC_Payment_ID());
+		paymentBankFrom.saveEx();
+		paymentBankFrom.processIt(MPayment.DOCACTION_Complete);
+		paymentBankFrom.saveEx();
+		MBankStatement.addPayment(paymentBankFrom);
+		paymentBankTo.setRelatedPayment_ID(paymentBankFrom.getC_Payment_ID());
+		paymentBankTo.saveEx();
+		paymentBankTo.processIt(MPayment.DOCACTION_Complete);
+		paymentBankTo.saveEx();
+		MBankStatement.addPayment(paymentBankFrom);
     }
 
     private LinkedHashMap<Integer, MBankStatement> getBankStatements()
@@ -92,7 +182,7 @@ public class CloseStatementPOS extends CloseStatementPOSAbstract {
             if (bankStatementLineId != null && bankStatementLineId > 0)
             {
                 MBankStatementLine bankStatementLine = new MBankStatementLine(getCtx() , bankStatementLineId ,  get_TrxName());
-                MBankStatement bankStatement = bankStatementLine.getParent();
+                MBankStatement bankStatement =  new MBankStatement (getCtx(), bankStatementLine.getC_BankStatement_ID(), get_TrxName());
                 if (!baskStatements.containsKey(bankStatement.get_ID()))
                     baskStatements.put(bankStatement.get_ID() , bankStatement);
             }

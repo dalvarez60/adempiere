@@ -18,6 +18,7 @@ package org.adempiere.pos.command;
 
 import org.adempiere.pos.process.CreateOrderBasedOnAnother;
 import org.compiere.model.MDocType;
+import org.compiere.model.MPOS;
 import org.compiere.process.DocAction;
 import org.compiere.util.Trx;
 import org.compiere.util.TrxRunnable;
@@ -44,12 +45,13 @@ public class CommandGenerateReturn extends CommandAbstract implements Command {
                         .create(commandReceiver.getCtx())
                         .process(commandReceiver.getProcessId())
                         .withTitle(commandReceiver.getName())
-                        .withParameter(CreateOrderBasedOnAnother.C_OrderSource_ID, commandReceiver.getOrderId())
-                        .withParameter(CreateOrderBasedOnAnother.Bill_BPartner_ID, commandReceiver.getPartnerId())
-                        .withParameter(CreateOrderBasedOnAnother.DocSubTypeSO , MDocType.DOCSUBTYPESO_ReturnMaterial)
-                        .withParameter(CreateOrderBasedOnAnother.DocAction, DocAction.ACTION_None)
-                        .withParameter(CreateOrderBasedOnAnother.IsIncludePayments, false)
-                        .withParameter(CreateOrderBasedOnAnother.IsAllocated, false)
+                        .withParameter(CreateOrderBasedOnAnother.C_ORDERSOURCE_ID, commandReceiver.getOrderId())
+                        .withParameter(CreateOrderBasedOnAnother.BILL_BPARTNER_ID, commandReceiver.getPartnerId())
+                        .withParameter(CreateOrderBasedOnAnother.C_DOCTYPERMA_ID, MPOS.get(commandReceiver.getCtx(), commandReceiver.getPOSId()).getC_DocTypeRMA_ID())
+                        .withParameter(CreateOrderBasedOnAnother.DOCSUBTYPESO, MDocType.DOCSUBTYPESO_ReturnMaterial)
+                        .withParameter(CreateOrderBasedOnAnother.DOCACTION, DocAction.ACTION_None)
+                        .withParameter(CreateOrderBasedOnAnother.ISINCLUDEPAYMENTS, false)
+                        .withParameter(CreateOrderBasedOnAnother.ISALLOCATED, false)
                         .withoutTransactionClose()
                         .execute(trxName)
                 );

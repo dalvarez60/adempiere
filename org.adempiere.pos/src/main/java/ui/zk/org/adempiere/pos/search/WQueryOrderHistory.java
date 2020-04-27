@@ -75,6 +75,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 	private Datebox 		fieldDateTo;
 	private Datebox 		fieldDateFrom;
 	private Checkbox 		fieldProcessed;
+	private Checkbox 		fieldAisleSeller;
 	private Checkbox 		fieldAllowDate;
 
 	private Date 			dateTo;
@@ -89,12 +90,14 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 	static final private String OPENAMT         = "OpenAmt";
 	static final private String PAID            = "IsPaid";
 	static final private String PROCESSED       = "Processed";
+	static final private String AISLE_SELLER    = "IsAisleSeller";
 	static final private String INVOICED       	= "IsInvoiced";
 	static final private String DATE	        = "Date";
 	static final private String DATEORDEREDFROM = "From";
 	static final private String DATEORDEREDTO   = "To";
 	static final private String DATEORDERED     = "DateOrdered";
 	static final private String QUERY           = "Query";
+	static final private String SALES_REP      	= "SalesRep_ID";
 	
 	/**	Table Column Layout Info			*/
 	private static ColumnInfo[] columnInfos = new ColumnInfo[] {
@@ -106,7 +109,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 		new ColumnInfo(Msg.translate(Env.getCtx(), GRANDTOTAL), GRANDTOTAL, BigDecimal.class),
 		new ColumnInfo(Msg.translate(Env.getCtx(), OPENAMT), OPENAMT, BigDecimal.class),
 		new ColumnInfo(Msg.translate(Env.getCtx(), PAID), PAID, Boolean.class), 
-		new ColumnInfo(Msg.translate(Env.getCtx(), PROCESSED), PROCESSED, Boolean.class), 
+		new ColumnInfo(Msg.translate(Env.getCtx(), SALES_REP), SALES_REP, String.class), 
 		new ColumnInfo(Msg.translate(Env.getCtx(), INVOICED), INVOICED, Boolean.class)
 	};
 
@@ -204,6 +207,14 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 		fieldProcessed.addActionListener(this);
 		fieldProcessed.setStyle(WPOS.FONTSIZESMALL);
 		
+		//	Aisle Seller
+		fieldAisleSeller = new Checkbox();
+		fieldAisleSeller.setLabel(Msg.translate(ctx, AISLE_SELLER));
+		fieldAisleSeller.setSelected(false);
+		row.appendChild(fieldAisleSeller);
+		fieldAisleSeller.addActionListener(this);
+		fieldAisleSeller.setStyle(WPOS.FONTSIZESMALL);
+		
 		//	Center
 		posTable = ListboxFactory.newDataTable();
 		posTable.prepareTable (columnInfos, "C_Order",
@@ -231,6 +242,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 	public void reset()
 	{
 		fieldProcessed.setSelected(false);
+		fieldAisleSeller.setSelected(false);
 		fieldDocumentNo.setText(null);
 		fieldDateFrom.setValue(Env.getContextAsDate(Env.getCtx(), "#Date"));
 		fieldDateTo.setValue(Env.getContextAsDate(Env.getCtx(), "#Date"));
@@ -241,7 +253,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 	 * 	Set/display Results
 	 *	@param results results
 	 */
-	public void setResults (Properties ctx, boolean processed, String doc, Date dateFrom, Date dateTo, String bPartner, boolean aDate)
+	public void setResults (Properties ctx, boolean processed, boolean isAisleSeller, String doc, Date dateFrom, Date dateTo, String bPartner, boolean aDate)
 	{
 		StringBuffer sql = new StringBuffer();
 		PreparedStatement preparedStatement = null;
@@ -252,7 +264,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 				// priority for open amounts: invoices, allocations, order
 				.append(" COALESCE(SUM(invoiceopen(i.C_Invoice_ID, 0)), COALESCE(o.GrandTotal - SUM(al.amount),0)) AS InvoiceOpen, ")
 			    .append(" COALESCE(i.IsPaid, CASE WHEN o.GrandTotal - SUM(al.amount) = 0 THEN 'Y' ELSE 'N' END) IsPaid, ")
-			    .append(" o.Processed, ")
+			    .append(" u.Name, ")
 			    .append(" CASE WHEN COALESCE(COUNT(i.C_Invoice_ID), 0) > 0 THEN 'Y' ELSE 'N' END")
 				.append(" FROM C_Order o ")
 				.append(" INNER JOIN C_BPartner      b ON (o.C_BPartner_ID = b.C_BPartner_ID)");
@@ -264,9 +276,14 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 			
 			sql.append(" LEFT JOIN C_invoice        i ON (i.C_Order_ID = o.C_Order_ID)")
 				.append(" LEFT JOIN C_AllocationLine al ON (o.C_Order_ID = al.C_Order_ID)")
-				.append(" WHERE  o.DocStatus <> 'VO'")
-				.append(" AND o.C_POS_ID = ?")
-				.append(" AND o.Processed= ?");
+				.append(" LEFT JOIN AD_User u ON(u.AD_User_ID = o.SalesRep_ID)")
+				.append(" WHERE  o.DocStatus <> 'VO'");
+			if(isAisleSeller) {
+				sql.append(" AND EXISTS(SELECT 1 FROM C_POS p WHERE p.C_POS_ID = o.C_POS_ID AND o.C_POS_ID <> ? AND p.IsAisleSeller = 'Y')");
+			} else {
+				sql.append(" AND o.C_POS_ID = ? ");
+			}	
+			sql.append(" AND o.Processed= ?");
 			if (doc != null && !doc.equalsIgnoreCase(""))
 				sql.append(" AND (o.DocumentNo LIKE '%" + doc + "%' OR  i.DocumentNo LIKE '%" + doc + "%')");
 			if ( dateFrom != null && aDate) {
@@ -278,7 +295,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 			if (bPartner != null && !bPartner.equalsIgnoreCase(""))
 				sql.append(" AND (UPPER(b.name) LIKE '%" + bPartner + "%' OR UPPER(b.value) LIKE '%" + bPartner + "%' )");
 			//	Group By
-			sql.append(" GROUP BY o.C_Order_ID, o.DocumentNo, dt.Name , b.Name, o.GrandTotal, o.Processed, i.IsPaid ");
+			sql.append(" GROUP BY o.C_Order_ID, o.DocumentNo, dt.Name, b.Name, u.Name, o.GrandTotal, o.Processed, i.IsPaid ");
 			sql.append(" ORDER BY o.Updated");
 			int i = 1;			
 			preparedStatement = DB.prepareStatement(sql.toString(), null);
@@ -391,8 +408,11 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 		else if(e.getTarget().getId().equals("Refresh")) {
 			refresh();
 		}
-		if ( e.getTarget().equals(fieldProcessed) || e.getTarget().equals(fieldAllowDate)
-				|| e.getTarget().equals(fieldDateTo) || e.getTarget().equals(fieldDateFrom)) {
+		if (e.getTarget().equals(fieldProcessed)
+				|| e.getTarget().equals(fieldAisleSeller)
+				|| e.getTarget().equals(fieldAllowDate)
+				|| e.getTarget().equals(fieldDateTo) 
+				|| e.getTarget().equals(fieldDateFrom)) {
 				refresh();
 				return;
 		}
@@ -429,7 +449,7 @@ public class WQueryOrderHistory extends WPOSQuery implements POSQueryInterface
 		else {
 			dateFrom = null;
 		}
-		setResults(ctx, fieldProcessed.isSelected(), fieldDocumentNo.getText(), dateFrom, dateTo, 
+		setResults(ctx, fieldProcessed.isSelected(), fieldAisleSeller.isSelected(), fieldDocumentNo.getText(), dateFrom, dateTo, 
 					fieldBPartner.getText().toUpperCase(), fieldAllowDate.isSelected());
 		unlockUI();
 	}

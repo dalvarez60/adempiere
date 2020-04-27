@@ -15,17 +15,28 @@
  * ****************************************************************************/
 package org.adempiere.pos.process;
 
+import org.compiere.model.I_C_Order;
+import org.compiere.model.I_M_InOut;
 import org.compiere.model.MAllocationHdr;
 import org.compiere.model.MAllocationLine;
 import org.compiere.model.MDocType;
+import org.compiere.model.MInOut;
 import org.compiere.model.MInvoice;
 import org.compiere.model.MOrder;
 import org.compiere.model.MPayment;
 import org.compiere.model.PO;
+import org.compiere.process.DocAction;
+import org.compiere.util.Env;
 import org.compiere.util.Msg;
+import org.eevolution.service.dsl.ProcessBuilder;
+import org.spin.process.OrderRMACreateFrom;
+import org.spin.process.OrderRMACreateFromInvoice;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 
@@ -38,8 +49,7 @@ import java.util.List;
  * 		@see FR [ 670 ] Standard process for return material on POS</a>
  */
 public class CreateOrderBasedOnAnother extends CreateOrderBasedOnAnotherAbstract {
-
-    private MOrder targetOrder;
+	
     private Timestamp today;
 
 
@@ -50,45 +60,138 @@ public class CreateOrderBasedOnAnother extends CreateOrderBasedOnAnotherAbstract
 
     @Override
     protected String doIt() throws Exception {
-        today = new Timestamp(System.currentTimeMillis());
-        MOrder sourceOrder = new MOrder(getCtx(),  getOrderSourceId() , get_TrxName());
+    	today = new Timestamp(System.currentTimeMillis());
+        // Get Order
+        MOrder sourceOrder = new MOrder(getCtx(), getOrderSourceId(), get_TrxName());
         //Create new Order based on source order
-        targetOrder = MOrder.copyFrom(
-                sourceOrder,
-                today ,
-                sourceOrder.getC_DocTypeTarget_ID(),
-                sourceOrder.isSOTrx(),
-                false ,
-                true ,
-                get_TrxName());
-        if (getSOSubType() != null)
-            targetOrder.setC_DocTypeTarget_ID(MDocType.getDocTypeBaseOnSubType(sourceOrder.getAD_Org_ID() , MDocType.DOCBASETYPE_SalesOrder , getSOSubType()));
-
-        targetOrder.setC_BPartner_ID(getInvoicePartnerId());
-        targetOrder.setRef_Order_ID(sourceOrder.get_ID());
-        targetOrder.setDocAction(getDocumentAction());
-        targetOrder.setDocStatus(org.compiere.process.DocAction.STATUS_Drafted);
-        targetOrder.setProcessed(false);
-        targetOrder.saveEx();
-
-        //Complete new Order
-        targetOrder.processIt(getDocumentAction());
-        targetOrder.saveEx();
-        addLog(targetOrder.getDocumentNo());
+        MOrder returnOrder = null;
+        //	Get Invoices for ths order
+        List<MInOut> shipments = Arrays.asList(sourceOrder.getShipments());
+        // If not exist invoice then only is necessary reverse shipment
+        if (shipments.size() > 0) {
+        	// Validate if partner not is POS partner standard then reverse shipment
+        	returnOrder = createReturnSource(sourceOrder);
+            List<Integer> selectedRecordsIds = new ArrayList<>();
+        	ProcessBuilder builder = ProcessBuilder
+            	.create(getCtx())
+            	.process(OrderRMACreateFrom.getProcessId())
+            	.withRecordId(I_C_Order.Table_ID, returnOrder.getC_Order_ID());
+        	//	
+        	LinkedHashMap<Integer, LinkedHashMap<String, Object>> selection = new LinkedHashMap<>();
+        	shipments.forEach(sourceShipment -> {
+        		//	Add values
+        		Arrays.asList(sourceShipment.getLines())
+        			.forEach(sourceShipmentLine -> {
+        				LinkedHashMap<String, Object> selectionValues = new LinkedHashMap<String, Object>();
+        				selectionValues.put("CF_M_Product_ID", sourceShipmentLine.getM_Product_ID());
+        	    		selectionValues.put("CF_C_Charge_ID", sourceShipmentLine.getC_Charge_ID());
+        	    		selectionValues.put("CF_C_UOM_ID", sourceShipmentLine.getC_UOM_ID());
+        	    		selectionValues.put("CF_QtyEntered", sourceShipmentLine.getQtyEntered());
+        	    		selectedRecordsIds.add(sourceShipmentLine.getM_InOutLine_ID());
+        	    		selection.put(sourceShipmentLine.getM_InOutLine_ID(), selectionValues);
+        			});
+        	});
+        	//	
+        	builder.withSelectedRecordsIds(I_M_InOut.Table_ID, selectedRecordsIds, selection)
+        		.withoutTransactionClose()
+        		.execute(get_TrxName());
+        } else {
+        	List<MInvoice> invoices = Arrays.asList(sourceOrder.getInvoices());
+        	if(invoices.size() > 0) {
+        		returnOrder = createReturnSource(sourceOrder);
+                List<Integer> selectedRecordsIds = new ArrayList<>();
+            	ProcessBuilder builder = ProcessBuilder
+                	.create(getCtx())
+                	.process(OrderRMACreateFromInvoice.getProcessId())
+                	.withRecordId(I_C_Order.Table_ID, returnOrder.getC_Order_ID());
+            	//	
+            	LinkedHashMap<Integer, LinkedHashMap<String, Object>> selection = new LinkedHashMap<>();
+            	invoices.forEach(invoice -> {
+            		//	Add values
+            		Arrays.asList(invoice.getLines())
+            			.forEach(sourceInvoiceLine -> {
+            				LinkedHashMap<String, Object> selectionValues = new LinkedHashMap<String, Object>();
+            				selectionValues.put("CF_M_Product_ID", sourceInvoiceLine.getM_Product_ID());
+            	    		selectionValues.put("CF_C_Charge_ID", sourceInvoiceLine.getC_Charge_ID());
+            	    		selectionValues.put("CF_C_UOM_ID", sourceInvoiceLine.getC_UOM_ID());
+            	    		selectionValues.put("CF_QtyEntered", sourceInvoiceLine.getQtyEntered());
+            	    		selectedRecordsIds.add(sourceInvoiceLine.getC_InvoiceLine_ID());
+            	    		selection.put(sourceInvoiceLine.getC_InvoiceLine_ID(), selectionValues);
+            			});
+            	});
+            	//	
+            	builder.withSelectedRecordsIds(I_M_InOut.Table_ID, selectedRecordsIds, selection)
+            		.withoutTransactionClose()
+            		.execute(get_TrxName());
+        	}
+        }
+        addLog(returnOrder.getDocumentNo());
         //	Set Record ID
-        getProcessInfo().setRecord_ID(targetOrder.get_ID());
-        String message = "@C_Order_ID@ " + targetOrder.getDocumentNo();
+        getProcessInfo().setRecord_ID(returnOrder.get_ID());
+        String message = "@C_Order_ID@ " + returnOrder.getDocumentNo();
         //	Validate Document Action
-        if(!targetOrder.isProcessed()) {
+        if(!returnOrder.isProcessed()) {
         	return message;
         }
 
-        if(isIncludePayments())
-            createPayments(sourceOrder, targetOrder);
-        if (isAllocated())
-            createAllocations(targetOrder);
+        if(getIsIncludePayments() != null
+        		&& getIsIncludePayments().equals("Y"))
+            createPayments(sourceOrder, returnOrder);
+        if (getIsAllocated() != null
+        		&& getIsAllocated().equals("Y"))
+            createAllocations(returnOrder);
         //	Default Return
         return message;
+    }
+    
+    /**
+     * Create Return Order
+     * @param source
+     * @return
+     */
+    private MOrder createReturnSource(MOrder source) {
+    	MOrder target = new MOrder (getCtx(), 0, get_TrxName());
+		target.set_TrxName(get_TrxName());
+		PO.copyValues(source, target, false);
+		//
+		target.setDocStatus (DocAction.STATUS_Drafted);		//	Draft
+		target.setDocAction(DocAction.ACTION_Complete);
+		//
+		target.setIsSelected (false);
+		target.setDateOrdered(today);
+		target.setDateAcct(today);
+		target.setDatePromised(today);	//	assumption
+		target.setDatePrinted(null);
+		target.setIsPrinted (false);
+		//
+		target.setIsApproved (false);
+		target.setIsCreditApproved(false);
+		target.setC_Payment_ID(0);
+		target.setC_CashLine_ID(0);
+		//	Amounts are updated  when adding lines
+		target.setGrandTotal(Env.ZERO);
+		target.setTotalLines(Env.ZERO);
+		//
+		target.setIsDelivered(false);
+		target.setIsInvoiced(false);
+		target.setIsSelfService(false);
+		target.setIsTransferred (false);
+		target.setPosted (false);
+		target.setProcessed (false);
+		target.save(source.get_TrxName());
+		//	Set Document base for return
+		if(getDocTypeRMAId() != 0) {
+        	target.setC_DocTypeTarget_ID(getDocTypeRMAId());
+        } else {
+        	target.setC_DocTypeTarget_ID(MDocType.getDocTypeBaseOnSubType(source.getAD_Org_ID(), 
+            		MDocType.DOCBASETYPE_SalesOrder , MDocType.DOCSUBTYPESO_ReturnMaterial));
+    	}
+        //	Set references
+		target.setC_BPartner_ID(getBPartnerId());
+		target.setRef_Order_ID(source.getC_Order_ID());
+		target.setProcessed(false);
+		target.saveEx();
+		return target;
     }
 
     /**
@@ -149,10 +252,8 @@ public class CreateOrderBasedOnAnother extends CreateOrderBasedOnAnotherAbstract
      * @param sourceOrder
      * @param targetOrder
      */
-    private void createPayments(MOrder sourceOrder , MOrder targetOrder)
-    {
-        for (MPayment sourcePayment : MPayment.getOfOrder(sourceOrder))
-        {
+    private void createPayments(MOrder sourceOrder , MOrder targetOrder) {
+        for (MPayment sourcePayment : MPayment.getOfOrder(sourceOrder)) {
             MPayment payment = new MPayment(getCtx() ,  0 , get_TrxName());
             PO.copyValues(sourcePayment, payment);
             payment.setDateTrx(today);
@@ -166,7 +267,7 @@ public class CreateOrderBasedOnAnother extends CreateOrderBasedOnAnotherAbstract
             payment.setIsPrepayment(true);
             payment.saveEx();
 
-            payment.processIt(getDocumentAction());
+            payment.processIt(getDocAction());
             payment.saveEx();
             addLog(payment.getDocumentInfo());
         }

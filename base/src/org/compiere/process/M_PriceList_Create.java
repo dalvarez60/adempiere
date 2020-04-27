@@ -55,8 +55,7 @@ import org.compiere.util.ValueNamePair;
  * @author Carlos Ruiz (globalqss)
  *         Make T_Selection tables permanent   
  * @author Yamel Senih, ysenih@erpya.com, ERPCyA http://www.erpya.com
- *	Improve calculation times
- *	Add Product Group, Class and Classification for criteria      
+ *		Improve calculation times      
  */
 public class M_PriceList_Create extends M_PriceList_CreateAbstract {
 

@@ -33,7 +33,7 @@ public class X_C_Order extends PO implements I_C_Order, I_Persistent
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = 20200114L;
+	private static final long serialVersionUID = 20200221L;
 
     /** Standard Constructor */
     public X_C_Order (Properties ctx, int C_Order_ID, String trxName)
@@ -821,6 +821,7 @@ public class X_C_Order extends PO implements I_C_Order, I_Persistent
 			 return 0;
 		return ii.intValue();
 	}
+
 
 	public org.compiere.model.I_C_SalesRegion getC_SalesRegion() throws RuntimeException
     {

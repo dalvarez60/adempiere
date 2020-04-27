@@ -980,6 +980,13 @@ public class MCostDetail extends X_M_CostDetail
 				+" INNER JOIN C_LandedCostAllocation la ON (il.C_InvoiceLine_ID=la.C_InvoiceLine_ID)"
 				+" WHERE la.C_LandedCostAllocation_ID=?";
 			param1 = getC_LandedCostAllocation_ID();
+		}else if (getM_ProductionLine_ID() > 0)
+		{
+			sql = "SELECT p.MovementDate FROM M_ProductionLine pl"
+				+" LEFT JOIN M_ProductionPlan pp ON (pl.M_ProductionPlan_ID = pp.M_ProductionPlan_ID)"
+				+" LEFT JOIN M_Production p ON (p.M_Production_ID = COALESCE(pl.M_Production_ID,pp.M_Production_ID))"
+				+" WHERE pl.M_ProductionLine_ID=?";
+			param1 = getM_ProductionLine_ID();
 		}
 		//
 		dateAcct = DB.getSQLValueTSEx(get_TrxName(), sql, param1);

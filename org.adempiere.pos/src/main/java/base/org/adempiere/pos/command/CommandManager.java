@@ -40,16 +40,17 @@ public class CommandManager {
     public static String COMPLETE_DOCUMENT = "Complete Document";
     public static String GENERATE_WITHDRAWAL = GenerateWithdrawal.getProcessValue();
     public static String CLOSE_STATEMENT = CloseStatementPOS.getProcessValue();
+    public static String PRINT_DOCUMENT = "Print Document";
 
     private HashMap<String , Command> commands = new HashMap<String , Command>();
 
     private HashMap<String , CommandReceiver> receivers = new HashMap<String , CommandReceiver>(){
-        {
-            CommandReceiver   commandReceiver = new CommandReceiver(null, GENERATE_IMMEDIATE_INVOICE, GenerateImmediateInvoice.getProcessName());
+        {	
+            CommandReceiver commandReceiver = new CommandReceiver(null, GENERATE_IMMEDIATE_INVOICE, GenerateImmediateInvoice.getProcessName());
             commands.put(GENERATE_IMMEDIATE_INVOICE, new CommandImmediateInvoice(GENERATE_IMMEDIATE_INVOICE ,commandReceiver.getEvent()));
             put(GENERATE_IMMEDIATE_INVOICE, commandReceiver);
-
-            commandReceiver =  new CommandReceiver(null, GENERATE_REVERSE_SALES, ReverseTheSalesTransaction.getProcessName());
+            
+            commandReceiver = new CommandReceiver(null, GENERATE_REVERSE_SALES, "@pos.reverse.sales.transaction@");
             commands.put(GENERATE_REVERSE_SALES, new CommandReverseSalesTransaction(GENERATE_REVERSE_SALES, commandReceiver.getEvent()));
             put(GENERATE_REVERSE_SALES,commandReceiver);
 
@@ -61,14 +62,17 @@ public class CommandManager {
             commands.put(COMPLETE_DOCUMENT, new CommandCompleteDocument(COMPLETE_DOCUMENT, commandReceiver.getEvent()));
             put(COMPLETE_DOCUMENT, commandReceiver);
 
-            commandReceiver = new CommandReceiver(null, GENERATE_WITHDRAWAL, GenerateWithdrawal.getProcessName());
+            commandReceiver = new CommandReceiver(null, GENERATE_WITHDRAWAL, "@pos.new.withdrawal@");
             commands.put(GENERATE_WITHDRAWAL, new CommandWithdrawal(GENERATE_WITHDRAWAL,commandReceiver.getEvent()));
             put(GENERATE_WITHDRAWAL, commandReceiver);
-
-
-            commandReceiver = new CommandReceiver(null, CLOSE_STATEMENT, CloseStatementPOS.getProcessName());
+            
+            commandReceiver = new CommandReceiver(null, CLOSE_STATEMENT, "@pos.close.cash@");
             commands.put(CLOSE_STATEMENT, new CommandWithdrawal(CLOSE_STATEMENT,commandReceiver.getEvent()));
             put(CLOSE_STATEMENT, commandReceiver);
+            
+            commandReceiver = new CommandReceiver(null, PRINT_DOCUMENT, "@Print@");
+            commands.put(PRINT_DOCUMENT, new CommandPrintDocument(PRINT_DOCUMENT ,commandReceiver.getEvent()));
+            put(PRINT_DOCUMENT, commandReceiver);
         }
     };
 
@@ -80,7 +84,7 @@ public class CommandManager {
     {
         return commands.values()
                 .stream()
-                .filter(action -> action.getEvent() == event)
+                .filter(action -> action.getEvent().equals(event))
                 .findFirst()
                 .orElseThrow(() -> new AdempierePOSException(event + " @NotFound@"));
     }
@@ -89,7 +93,7 @@ public class CommandManager {
     {
         return receivers.values()
                 .stream()
-                .filter(action -> action.getEvent() == event)
+                .filter(action -> action.getEvent().equals(event))
                 .findFirst()
                 .orElseThrow(() -> new AdempierePOSException(event + " @NotFound@ "));
     }

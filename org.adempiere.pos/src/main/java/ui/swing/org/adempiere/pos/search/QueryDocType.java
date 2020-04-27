@@ -178,7 +178,7 @@ public class QueryDocType extends POSQuery {
 				.append(" WHERE dt.AD_Client_ID = ? AND dt.AD_Org_ID IN (0, ?)")
 				.append(" AND dt.isActive='Y'")
 				.append(" AND dt.DocBaseType='SOO'")
-				.append(" AND dt.DocSubTypeSO IN(?, ?, ?, ?, ?)")
+				.append(" AND dt.DocSubTypeSO IN(?, ?, ?, ?, ?, ?)")
 			    .append(" ORDER BY dt.Name");
 			int i = 1;			
 			pstm = DB.prepareStatement(sql.toString(), null);
@@ -190,6 +190,7 @@ public class QueryDocType extends POSQuery {
 			pstm.setString(i++, MOrder.DocSubTypeSO_Standard);
 			pstm.setString(i++, MOrder.DocSubTypeSO_Prepay);
 			pstm.setString(i++, MOrder.DocSubTypeSO_Warehouse);
+			pstm.setString(i++, MOrder.DocSubTypeSO_InvoiceOrder);
 			//	
 			rs = pstm.executeQuery();
 			posTable.loadTable(rs);

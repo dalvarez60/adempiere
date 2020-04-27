@@ -235,42 +235,37 @@ public class WPOSQuantityPanel extends WPOSSubPanel implements POSPanelInterface
 			}
 			BigDecimal value = Env.ZERO;
 			if(Events.ON_OK.equals(e.getName()) || Events.ON_CHANGE.equals(e.getName())) {
-        
 			  value = fieldQuantity.getValue();
-        if(value == null)
-          return;
-        if(e.getTarget().equals(fieldQuantity.getDecimalbox())) {
-          if(Events.ON_OK.equals(e.getName())){
-            posPanel.setQty(value);
-          }
-          else if(posPanel.isAddQty() 
-              || Events.ON_CHANGE.equals(e.getName())){
-            //  Verify if it add or set
-            if(posPanel.isAddQty()) {
-              posPanel.setQtyAdded(value);
-            } else {
-              posPanel.setQty(value);
-            }
-          }
-          
-        }
-      
-        if (e.getTarget().equals(fieldPrice.getDecimalbox())) {
-          value = fieldPrice.getValue();
-          if(value == null)
-            return;
-          if(posPanel.isUserPinValid()) {
-            posPanel.setPrice(value);
-          }
-        }
-        else if ( e.getTarget().equals(fieldDiscountPercentage.getDecimalbox())) {
-          if(posPanel.isUserPinValid()) {
-            value = fieldDiscountPercentage.getValue();
-            if(value == null)
-              return;
-            posPanel.setDiscountPercentage(value);
-          }
-        }
+			  if(value == null)
+		          return;
+		        if((e.getTarget().equals(fieldQuantity.getDecimalbox())
+		        		|| e.getTarget().equals(fieldPrice.getDecimalbox())
+		        		|| e.getTarget().equals(fieldDiscountPercentage.getDecimalbox()))) {
+		        	if (e.getTarget().equals(fieldPrice.getDecimalbox())) {
+	        			value = fieldPrice.getValue();
+	        			if(value == null)
+	        				return;
+	        			if(posPanel.isUserPinValid()) {
+	        				posPanel.setPrice(value);
+	        			}
+	        		} else if (e.getTarget().equals(fieldDiscountPercentage.getDecimalbox())) {
+	        			if(posPanel.isUserPinValid()) {
+	        				value = fieldDiscountPercentage.getValue();
+	        				if(value == null)
+	        					return;
+	        				posPanel.setDiscountPercentage(value);
+	        			}
+	        		}
+		        	posPanel.setQty(value);
+		        } else if(posPanel.isAddQty() 
+		              || Events.ON_CHANGE.equals(e.getName())){
+		            //  Verify if it add or set
+		        	if(posPanel.isAddQty()) {
+		              posPanel.setQtyAdded(value);
+		            } else {
+		              posPanel.setQty(value);
+		            }
+		        }
 			}
 
 			posPanel.updateLineTable();
@@ -384,7 +379,6 @@ public class WPOSQuantityPanel extends WPOSSubPanel implements POSPanelInterface
 
 	public void setQuantity(BigDecimal value) {
 		fieldQuantity.setValue(value);
-		fieldQuantity.focus();
 	}
 
 	public void requestFocus() {

@@ -268,6 +268,13 @@ public class WPOSTextField extends Div {
 		f_PlaceHolder.setReadonly(readOnly);
 	}
 	
+	/**
+	 * Select Text
+	 */
+	public void selectText() {
+		f_TextField.setSelectionRange(0, getText().length());
+	}
+	
 	/**		
 	* Get Component		
 	* @param comp		
@@ -291,6 +298,7 @@ public class WPOSTextField extends Div {
 	@Override
 	public void setFocus(boolean focus){
 		f_TextField.setFocus(focus);
+		f_PlaceHolder.setText("");
 	}
 	
 	/**

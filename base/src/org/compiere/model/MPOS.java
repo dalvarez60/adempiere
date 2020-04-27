@@ -82,6 +82,27 @@ public class MPOS extends X_C_POS
 				.list();
 	}
 	
+	/**
+	 * 
+	 * @param ctx
+	 * @param orgId
+	 * @param salesRepresentativeId
+	 * @param trxName
+	 * @return
+	 */
+	public static List<MPOS> getBySalesRepresentativeAndOrganization(Properties ctx,int orgId, int salesRepresentativeId, String trxName) {
+		StringBuffer whereClause = new StringBuffer("AD_Org_ID = ?");
+		//	
+		whereClause.append(" AND (IsSharedPOS = 'Y' OR SalesRep_ID = ? OR EXISTS(SELECT 1 FROM AD_User u WHERE u.AD_User_ID = ? AND IsPOSManager = 'Y'))");
+		
+		return new Query(ctx , Table_Name , whereClause.toString() , trxName )
+				.setClient_ID()
+				.setOnlyActiveRecords(true)
+				.setParameters(orgId, salesRepresentativeId, salesRepresentativeId)
+				.setOrderBy(COLUMNNAME_Name)
+				.list();
+	}
+	
 	/**	Cache						*/
 	private static CCache<Integer,MPOS> s_cache = new CCache<Integer,MPOS>("C_POS", 20);
 

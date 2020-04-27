@@ -22,7 +22,7 @@ import org.compiere.util.KeyNamePair;
 
 /** Generated Interface for C_POS
  *  @author Adempiere (generated) 
- *  @version Release 3.9.2
+ *  @version Release 3.9.3
  */
 public interface I_C_POS 
 {
@@ -75,94 +75,6 @@ public interface I_C_POS
 	  */
 	public int getAutoLogoutDelay();
 
-    /** Column name C_BPartnerCashTrx_ID */
-    public static final String COLUMNNAME_C_BPartnerCashTrx_ID = "C_BPartnerCashTrx_ID";
-
-	/** Set Template B.Partner.
-	  * Business Partner used for creating new Business Partners on the fly
-	  */
-	public void setC_BPartnerCashTrx_ID (int C_BPartnerCashTrx_ID);
-
-	/** Get Template B.Partner.
-	  * Business Partner used for creating new Business Partners on the fly
-	  */
-	public int getC_BPartnerCashTrx_ID();
-
-	public org.compiere.model.I_C_BPartner getC_BPartnerCashTrx() throws RuntimeException;
-
-    /** Column name C_BankAccount_ID */
-    public static final String COLUMNNAME_C_BankAccount_ID = "C_BankAccount_ID";
-
-	/** Set Bank Account.
-	  * Account at the Bank
-	  */
-	public void setC_BankAccount_ID (int C_BankAccount_ID);
-
-	/** Get Bank Account.
-	  * Account at the Bank
-	  */
-	public int getC_BankAccount_ID();
-
-	public org.compiere.model.I_C_BankAccount getC_BankAccount() throws RuntimeException;
-
-    /** Column name C_CashBook_ID */
-    public static final String COLUMNNAME_C_CashBook_ID = "C_CashBook_ID";
-
-	/** Set Cash Book.
-	  * Cash Book for recording petty cash transactions
-	  */
-	public void setC_CashBook_ID (int C_CashBook_ID);
-
-	/** Get Cash Book.
-	  * Cash Book for recording petty cash transactions
-	  */
-	public int getC_CashBook_ID();
-
-	public org.compiere.model.I_C_CashBook getC_CashBook() throws RuntimeException;
-
-    /** Column name C_DocType_ID */
-    public static final String COLUMNNAME_C_DocType_ID = "C_DocType_ID";
-
-	/** Set Document Type.
-	  * Document type or rules
-	  */
-	public void setC_DocType_ID (int C_DocType_ID);
-
-	/** Get Document Type.
-	  * Document type or rules
-	  */
-	public int getC_DocType_ID();
-
-	public org.compiere.model.I_C_DocType getC_DocType() throws RuntimeException;
-
-    /** Column name C_POSKeyLayout_ID */
-    public static final String COLUMNNAME_C_POSKeyLayout_ID = "C_POSKeyLayout_ID";
-
-	/** Set POS Key Layout.
-	  * POS Function Key Layout
-	  */
-	public void setC_POSKeyLayout_ID (int C_POSKeyLayout_ID);
-
-	/** Get POS Key Layout.
-	  * POS Function Key Layout
-	  */
-	public int getC_POSKeyLayout_ID();
-
-	public org.compiere.model.I_C_POSKeyLayout getC_POSKeyLayout() throws RuntimeException;
-
-    /** Column name C_POS_ID */
-    public static final String COLUMNNAME_C_POS_ID = "C_POS_ID";
-
-	/** Set POS Terminal.
-	  * Point of Sales Terminal
-	  */
-	public void setC_POS_ID (int C_POS_ID);
-
-	/** Get POS Terminal.
-	  * Point of Sales Terminal
-	  */
-	public int getC_POS_ID();
-
     /** Column name CashDrawer */
     public static final String COLUMNNAME_CashDrawer = "CashDrawer";
 
@@ -186,6 +98,124 @@ public interface I_C_POS
 	public int getCashTransferBankAccount_ID();
 
 	public org.compiere.model.I_C_BankAccount getCashTransferBankAccount() throws RuntimeException;
+
+    /** Column name C_BankAccount_ID */
+    public static final String COLUMNNAME_C_BankAccount_ID = "C_BankAccount_ID";
+
+	/** Set Bank Account.
+	  * Account at the Bank
+	  */
+	public void setC_BankAccount_ID (int C_BankAccount_ID);
+
+	/** Get Bank Account.
+	  * Account at the Bank
+	  */
+	public int getC_BankAccount_ID();
+
+	public org.compiere.model.I_C_BankAccount getC_BankAccount() throws RuntimeException;
+
+    /** Column name C_BPartnerCashTrx_ID */
+    public static final String COLUMNNAME_C_BPartnerCashTrx_ID = "C_BPartnerCashTrx_ID";
+
+	/** Set Template B.Partner.
+	  * Business Partner used for creating new Business Partners on the fly
+	  */
+	public void setC_BPartnerCashTrx_ID (int C_BPartnerCashTrx_ID);
+
+	/** Get Template B.Partner.
+	  * Business Partner used for creating new Business Partners on the fly
+	  */
+	public int getC_BPartnerCashTrx_ID();
+
+	public org.compiere.model.I_C_BPartner getC_BPartnerCashTrx() throws RuntimeException;
+
+    /** Column name C_CashBook_ID */
+    public static final String COLUMNNAME_C_CashBook_ID = "C_CashBook_ID";
+
+	/** Set Cash Book.
+	  * Cash Book for recording petty cash transactions
+	  */
+	public void setC_CashBook_ID (int C_CashBook_ID);
+
+	/** Get Cash Book.
+	  * Cash Book for recording petty cash transactions
+	  */
+	public int getC_CashBook_ID();
+
+	public org.compiere.model.I_C_CashBook getC_CashBook() throws RuntimeException;
+
+    /** Column name C_ConversionType_ID */
+    public static final String COLUMNNAME_C_ConversionType_ID = "C_ConversionType_ID";
+
+	/** Set Currency Type.
+	  * Currency Conversion Rate Type
+	  */
+	public void setC_ConversionType_ID (int C_ConversionType_ID);
+
+	/** Get Currency Type.
+	  * Currency Conversion Rate Type
+	  */
+	public int getC_ConversionType_ID();
+
+	public org.compiere.model.I_C_ConversionType getC_ConversionType() throws RuntimeException;
+
+    /** Column name C_DocType_ID */
+    public static final String COLUMNNAME_C_DocType_ID = "C_DocType_ID";
+
+	/** Set Document Type.
+	  * Document type or rules
+	  */
+	public void setC_DocType_ID (int C_DocType_ID);
+
+	/** Get Document Type.
+	  * Document type or rules
+	  */
+	public int getC_DocType_ID();
+
+	public org.compiere.model.I_C_DocType getC_DocType() throws RuntimeException;
+
+    /** Column name C_DocTypeRMA_ID */
+    public static final String COLUMNNAME_C_DocTypeRMA_ID = "C_DocTypeRMA_ID";
+
+	/** Set Document Type for Return Order.
+	  * Document type used for Return Orders generated from this POS
+	  */
+	public void setC_DocTypeRMA_ID (int C_DocTypeRMA_ID);
+
+	/** Get Document Type for Return Order.
+	  * Document type used for Return Orders generated from this POS
+	  */
+	public int getC_DocTypeRMA_ID();
+
+	public org.compiere.model.I_C_DocType getC_DocTypeRMA() throws RuntimeException;
+
+    /** Column name C_POS_ID */
+    public static final String COLUMNNAME_C_POS_ID = "C_POS_ID";
+
+	/** Set POS Terminal.
+	  * Point of Sales Terminal
+	  */
+	public void setC_POS_ID (int C_POS_ID);
+
+	/** Get POS Terminal.
+	  * Point of Sales Terminal
+	  */
+	public int getC_POS_ID();
+
+    /** Column name C_POSKeyLayout_ID */
+    public static final String COLUMNNAME_C_POSKeyLayout_ID = "C_POSKeyLayout_ID";
+
+	/** Set POS Key Layout.
+	  * POS Function Key Layout
+	  */
+	public void setC_POSKeyLayout_ID (int C_POSKeyLayout_ID);
+
+	/** Get POS Key Layout.
+	  * POS Function Key Layout
+	  */
+	public int getC_POSKeyLayout_ID();
+
+	public org.compiere.model.I_C_POSKeyLayout getC_POSKeyLayout() throws RuntimeException;
 
     /** Column name Created */
     public static final String COLUMNNAME_Created = "Created";
@@ -281,6 +311,19 @@ public interface I_C_POS
 	  */
 	public boolean isActive();
 
+    /** Column name IsAisleSeller */
+    public static final String COLUMNNAME_IsAisleSeller = "IsAisleSeller";
+
+	/** Set Aisle Seller.
+	  * Aisle Seller or consultant for products without invoice
+	  */
+	public void setIsAisleSeller (boolean IsAisleSeller);
+
+	/** Get Aisle Seller.
+	  * Aisle Seller or consultant for products without invoice
+	  */
+	public boolean isAisleSeller();
+
     /** Column name IsEnableProductLookup */
     public static final String COLUMNNAME_IsEnableProductLookup = "IsEnableProductLookup";
 
@@ -320,6 +363,32 @@ public interface I_C_POS
 	  */
 	public boolean isPOSRequiredPIN();
 
+    /** Column name IsSharedPOS */
+    public static final String COLUMNNAME_IsSharedPOS = "IsSharedPOS";
+
+	/** Set Is Shared POS.
+	  * Is Shared POS
+	  */
+	public void setIsSharedPOS (boolean IsSharedPOS);
+
+	/** Get Is Shared POS.
+	  * Is Shared POS
+	  */
+	public boolean isSharedPOS();
+
+    /** Column name MeasureRequestCode */
+    public static final String COLUMNNAME_MeasureRequestCode = "MeasureRequestCode";
+
+	/** Set Measure Request Code.
+	  * String for  taking measurement from Device Electronic Scales
+	  */
+	public void setMeasureRequestCode (String MeasureRequestCode);
+
+	/** Get Measure Request Code.
+	  * String for  taking measurement from Device Electronic Scales
+	  */
+	public String getMeasureRequestCode();
+
     /** Column name M_PriceList_ID */
     public static final String COLUMNNAME_M_PriceList_ID = "M_PriceList_ID";
 
@@ -349,19 +418,6 @@ public interface I_C_POS
 	public int getM_Warehouse_ID();
 
 	public org.compiere.model.I_M_Warehouse getM_Warehouse() throws RuntimeException;
-
-    /** Column name MeasureRequestCode */
-    public static final String COLUMNNAME_MeasureRequestCode = "MeasureRequestCode";
-
-	/** Set Measure Request Code.
-	  * String for  taking measurement from Device Electronic Scales
-	  */
-	public void setMeasureRequestCode (String MeasureRequestCode);
-
-	/** Get Measure Request Code.
-	  * String for  taking measurement from Device Electronic Scales
-	  */
-	public String getMeasureRequestCode();
 
     /** Column name Name */
     public static final String COLUMNNAME_Name = "Name";
@@ -447,6 +503,21 @@ public interface I_C_POS
 
 	public org.compiere.model.I_AD_User getSalesRep() throws RuntimeException;
 
+    /** Column name Supervisor_ID */
+    public static final String COLUMNNAME_Supervisor_ID = "Supervisor_ID";
+
+	/** Set Supervisor.
+	  * Supervisor for this user/organization - used for escalation and approval
+	  */
+	public void setSupervisor_ID (int Supervisor_ID);
+
+	/** Get Supervisor.
+	  * Supervisor for this user/organization - used for escalation and approval
+	  */
+	public int getSupervisor_ID();
+
+	public org.compiere.model.I_AD_User getSupervisor() throws RuntimeException;
+
     /** Column name TicketClassName */
     public static final String COLUMNNAME_TicketClassName = "TicketClassName";
 
@@ -459,19 +530,6 @@ public interface I_C_POS
 	  * Java Classname for Ticket Handler
 	  */
 	public String getTicketClassName();
-
-    /** Column name UUID */
-    public static final String COLUMNNAME_UUID = "UUID";
-
-	/** Set Immutable Universally Unique Identifier.
-	  * Immutable Universally Unique Identifier
-	  */
-	public void setUUID (String UUID);
-
-	/** Get Immutable Universally Unique Identifier.
-	  * Immutable Universally Unique Identifier
-	  */
-	public String getUUID();
 
     /** Column name Updated */
     public static final String COLUMNNAME_Updated = "Updated";
@@ -488,4 +546,17 @@ public interface I_C_POS
 	  * User who updated this records
 	  */
 	public int getUpdatedBy();
+
+    /** Column name UUID */
+    public static final String COLUMNNAME_UUID = "UUID";
+
+	/** Set Immutable Universally Unique Identifier.
+	  * Immutable Universally Unique Identifier
+	  */
+	public void setUUID (String UUID);
+
+	/** Get Immutable Universally Unique Identifier.
+	  * Immutable Universally Unique Identifier
+	  */
+	public String getUUID();
 }

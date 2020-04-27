@@ -28,7 +28,6 @@ import org.adempiere.pos.service.POSPanelInterface;
 import org.adempiere.pos.service.POSScalesPanelInterface;
 import org.adempiere.webui.apps.AEnv;
 import org.adempiere.webui.component.Borderlayout;
-import org.adempiere.webui.component.Button;
 import org.adempiere.webui.component.ConfirmPanel;
 import org.adempiere.webui.component.Grid;
 import org.adempiere.webui.component.GridFactory;
@@ -108,8 +107,6 @@ public class WPOS extends CPOS implements IFormController, EventListener, POSPan
 	private StatusBarPanel 					statusBar = new StatusBarPanel();
 
 	/** Actions 							*/
-	private Button 							okButton = new Button("Ok");
-	private Button 							cancelButton = new Button("Cancel");
 	private ConfirmPanel 					confirm;
 	private Listbox 						listTerminal = ListboxFactory.newDropdownListbox();
 	private List<MPOS> poss;
@@ -242,14 +239,14 @@ public class WPOS extends CPOS implements IFormController, EventListener, POSPan
 	 *	@return true if found/set
 	 */
 	private void setMPOS() {
-		int salesRep_ID = Env.getAD_User_ID(getCtx());
-		setPOS(salesRep_ID);
+		int salesRepresentativeId = Env.getAD_User_ID(getCtx());
+		setPOS(salesRepresentativeId);
 		if(getM_POS() != null) {
 			validLocator();
 			return;
 		}
 		int orgId = Env.getAD_Org_ID(getCtx());
-		poss = getPOSByOrganization(orgId);
+		poss = getPOSBySalesRepresentativeAndOrganization(salesRepresentativeId, orgId);
 		//	Select POS
 		String msg = Msg.getMsg(getCtx(), "SelectPOS");
 		selection = new Window();
@@ -280,19 +277,9 @@ public class WPOS extends CPOS implements IFormController, EventListener, POSPan
 		Row row = null;
 		rows = layout.newRows();
 		row = rows.newRow();
-		int i = 0;
 		for(MPOS pos : poss){
 			listTerminal.addItem(pos.getKeyNamePair());
-			if (pos.getSalesRep_ID()==salesRep_ID)
-				listTerminal.setSelectedIndex(i);
-			i++;
 		}
-		okButton.addActionListener(this);
-		cancelButton.addEventListener("onClick", this);
-		okButton.setWidth("45px");
-		okButton.setHeight("45px");
-		cancelButton.setWidth("45px");
-		cancelButton.setHeight("45px");
 		listTerminal.setHeight("45px");
 		listTerminal.setStyle("height:45px;"+WPOS.FONTSIZEMEDIUM);
 		row.setSpans("2");
@@ -307,7 +294,7 @@ public class WPOS extends CPOS implements IFormController, EventListener, POSPan
 		confirm.getButton(ConfirmPanel.A_CANCEL).setHeight("55px");
 		
 		row.appendChild(confirm);
-		row.setHeight("60px");
+		row.setHeight("55px");
 		AEnv.showWindow(selection);
 			
 	}	//	setMPOS

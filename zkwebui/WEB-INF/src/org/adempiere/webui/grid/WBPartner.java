@@ -17,6 +17,7 @@
 
 package org.adempiere.webui.grid;
 
+import java.util.List;
 import java.util.logging.Level;
 
 import org.adempiere.webui.component.ConfirmPanel;
@@ -27,6 +28,7 @@ import org.adempiere.webui.component.Textbox;
 import org.adempiere.webui.component.VerticalBox;
 import org.adempiere.webui.component.Window;
 import org.adempiere.webui.editor.WLocationEditor;
+import org.adempiere.webui.editor.WTableDirEditor;
 import org.adempiere.exceptions.ValueChangeEvent;
 import org.adempiere.exceptions.ValueChangeListener;
 import org.adempiere.webui.window.FDialog;
@@ -34,13 +36,17 @@ import org.compiere.model.MBPartner;
 import org.compiere.model.MBPartnerLocation;
 import org.compiere.model.MLocation;
 import org.compiere.model.MLocationLookup;
+import org.compiere.model.MLookup;
+import org.compiere.model.MLookupFactory;
 import org.compiere.model.MRole;
 import org.compiere.model.MUser;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
+import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.KeyNamePair;
 import org.compiere.util.Msg;
+import org.spin.model.MADUserSocialMedia;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.WrongValueException;
 import org.zkoss.zk.ui.event.Event;
@@ -96,8 +102,12 @@ public class WBPartner extends Window implements EventListener, ValueChangeListe
 	private Textbox fPhone = new Textbox();
 	private Textbox fPhone2 = new Textbox();
 	private Textbox fFax = new Textbox();
+	private Textbox fTwitter = new Textbox();
+	private Textbox fFacebook = new Textbox();
+	private Textbox fInstagram = new Textbox();
 	
 	private WLocationEditor fAddress;/* = new WLocationDialog();*/
+	private WTableDirEditor fPersonType;
 	
 	private VerticalBox centerPanel = new VerticalBox();
 	
@@ -122,6 +132,7 @@ public class WBPartner extends Window implements EventListener, ValueChangeListe
 		
 		try
 		{
+			dynInit();
 			jbInit();
 		}
 		catch(Exception ex)
@@ -151,6 +162,17 @@ public class WBPartner extends Window implements EventListener, ValueChangeListe
 		confirmPanel.addActionListener(Events.ON_CLICK, this);
 	}
 	
+	public void dynInit() throws Exception
+	{
+		//  Currency
+		int AD_Column_ID = 93686;    //  C_Invoice.C_Currency_ID
+		MLookup lookupCur = MLookupFactory.get (Env.getCtx(), m_WindowNo, 0, AD_Column_ID, DisplayType.List);
+		fPersonType = new WTableDirEditor("PersonType", true, false, true, lookupCur);
+		fPersonType.setValue (null);
+		fPersonType.addValueChangeListener(this);
+
+	}
+	
 	/**
 	 *	Dynamic Init
 	 */
@@ -164,13 +186,15 @@ public class WBPartner extends Window implements EventListener, ValueChangeListe
 		fValue.addEventListener(Events.ON_CHANGE , this);
 		createLine (fValue, "Value", true);
 		
+		createLine (fPersonType.getComponent(), "PersonType", true);
+		
 		//	Greeting Business Partner
 		fBPGroup.setMold("select");
 		fBPGroup.setRows(0);
 		
 		for (int i = 0; i < m_bpgroup.length; i++)
 			fBPGroup.appendItem(m_bpgroup[i].toString(), m_bpgroup[i]);
-		createLine (fBPGroup, "Business Partner Group", false);
+		createLine (fBPGroup, "C_BP_Group_ID", false);
 		
 		//BPGroup
 //		Greeting Business Partner
@@ -235,6 +259,16 @@ public class WBPartner extends Window implements EventListener, ValueChangeListe
 		
 		//	Fax
 		createLine (fFax, "Fax", false);
+		
+		//	Twitter
+		fTwitter.setName("50001");
+		createLine (fTwitter, "Twitter", false);
+		//	Facebook
+		fTwitter.setName("50002");
+		createLine (fFacebook, "Facebook", false);
+		//	Instagram
+		fTwitter.setName("50004");
+		createLine (fInstagram, "Instagram", false);
 	}	//	initBPartner
 
 	/**
@@ -252,7 +286,7 @@ public class WBPartner extends Window implements EventListener, ValueChangeListe
 		hbox.setWidth("100%");
 		hbox.setWidths("30%, 70%");
 		
-		Label label = new Label(Msg.translate(Env.getCtx(), title));
+		Label label = new Label(Msg.getElement(Env.getCtx(), title));
 		hbox.appendChild(label);
 
 		hbox.appendChild(field);
@@ -368,10 +402,17 @@ public class WBPartner extends Window implements EventListener, ValueChangeListe
 			}
 		}
 		
+		ListItem itemPersonType = fGreetingBP.getSelectedItem();
+		KeyNamePair person = itemPersonType != null ? (KeyNamePair)itemPersonType.getValue() : null;
+		if (person != null && person.getKey() > 0)
+			m_partner.set_CustomColumn("PersonType", person.getKey());
+		
 		fName.setText(m_partner.getName());
 		fName2.setText(m_partner.getName2());
 		fTaxId.setText(m_partner.getTaxID());
 
+		fPersonType.setValue(m_partner.get_ValueAsString("PersonType"));
+		
 		//	Contact - Load values
 		m_pLocation = m_partner.getLocation(
 			Env.getContextAsInt(Env.getCtx(), m_WindowNo, "C_BPartner_Location_ID"));
@@ -411,6 +452,19 @@ public class WBPartner extends Window implements EventListener, ValueChangeListe
 			fPhone.setText(m_user.getPhone());
 			fPhone2.setText(m_user.getPhone2());
 			fFax.setText(m_user.getFax());
+			
+
+			List<MADUserSocialMedia> socialMediaList = MADUserSocialMedia.getSocialMedias(Env.getCtx(), m_user.getAD_User_ID());
+			socialMediaList.forEach(item -> {
+				String appSupport = String.valueOf(item.getAD_AppSupport_ID());
+				if(appSupport.equals(fTwitter.getName()))
+					fTwitter.setText(item.getAccountName());
+				else if(appSupport.equals(fFacebook.getName()))
+					fFacebook.setText(item.getAccountName());
+				else if(appSupport.equals(fInstagram.getName()))
+					fInstagram.setText(item.getAccountName());
+			});
+			
 		}
 		return true;
 	}	//	loadBPartner
@@ -464,6 +518,10 @@ public class WBPartner extends Window implements EventListener, ValueChangeListe
 		m_partner.setName(fName.getText());
 		m_partner.setName2(fName2.getText());
 		m_partner.setTaxID(fTaxId.getText());
+		
+		String itemPersonType = (String)fPersonType.getValue();
+		
+		m_partner.set_CustomColumn("PersonType", itemPersonType);
 		
 		ListItem listitem = fGreetingBP.getSelectedItem();
 		KeyNamePair p = listitem != null ? (KeyNamePair)listitem.getValue() : null;
@@ -527,6 +585,27 @@ public class WBPartner extends Window implements EventListener, ValueChangeListe
 			m_user.setPhone(fPhone.getText());
 			m_user.setPhone2(fPhone2.getText());
 			m_user.setFax(fFax.getText());
+			
+			MADUserSocialMedia socialMedia = new MADUserSocialMedia(Env.getCtx(), 0, null);
+			socialMedia.setApplicationType("SMN");
+			socialMedia.setAD_AppSupport_ID(50002);
+			socialMedia.setAD_User_ID(m_user.getAD_User_ID());
+			socialMedia.setAccountName(fFacebook.getText());
+			socialMedia.saveEx();
+			
+			socialMedia = new MADUserSocialMedia(Env.getCtx(), 0, null);
+			socialMedia.setApplicationType("SMN");
+			socialMedia.setAD_AppSupport_ID(50004);
+			socialMedia.setAD_User_ID(m_user.getAD_User_ID());
+			socialMedia.setAccountName(fInstagram.getText());
+			socialMedia.saveEx();
+			
+			socialMedia = new MADUserSocialMedia(Env.getCtx(), 0, null);
+			socialMedia.setApplicationType("SMN");
+			socialMedia.setAD_AppSupport_ID(50001);
+			socialMedia.setAD_User_ID(m_user.getAD_User_ID());
+			socialMedia.setAccountName(fTwitter.getText());
+			socialMedia.saveEx();
 			
 			if (m_user.save())
 				log.fine("AD_User_ID=" + m_user.getAD_User_ID());

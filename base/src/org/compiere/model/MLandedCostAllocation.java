@@ -17,6 +17,7 @@
 package org.compiere.model;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -244,11 +245,7 @@ public class MLandedCostAllocation extends X_C_LandedCostAllocation implements I
 	}
 
 	public BigDecimal getPriceActualCurrency() {
-		MInvoiceLine invoiceLine = (MInvoiceLine) getC_InvoiceLine();
-		MCurrency currency = MCurrency.get(getCtx(), getC_Currency_ID());
-		BigDecimal amount = getAmt().divide(getQty() , currency.getCostingPrecision() ,  RoundingMode.HALF_UP);
-		if (MDocType.DOCBASETYPE_APCreditMemo.equals(invoiceLine.getParent().getC_DocType().getDocBaseType()))
-			amount = amount.negate();
+		BigDecimal amount = getAmt().divide(getQty() , MathContext.DECIMAL128);
 		return  amount;
 	}
 
@@ -272,6 +269,15 @@ public class MLandedCostAllocation extends X_C_LandedCostAllocation implements I
 	public boolean isReversalParent() {
 		// TODO Auto-generated method stub
 		return false;
+	}
+	
+	@Override
+	public BigDecimal getAmt() {
+		BigDecimal amount = super.getAmt();
+		MInvoiceLine invoiceLine = (MInvoiceLine) getC_InvoiceLine();
+		if (MDocType.DOCBASETYPE_APCreditMemo.equals(invoiceLine.getParent().getC_DocTypeTarget().getDocBaseType()))
+			amount = amount.negate();
+		return  amount;
 	}
 	
 }	//	MLandedCostAllocation

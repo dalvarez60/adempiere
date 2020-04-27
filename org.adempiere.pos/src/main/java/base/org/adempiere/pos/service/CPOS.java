@@ -17,17 +17,20 @@
 package org.adempiere.pos.service;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.pos.AdempierePOSException;
@@ -40,6 +43,7 @@ import org.compiere.model.MAllocationLine;
 import org.compiere.model.MBPartner;
 import org.compiere.model.MBPartnerLocation;
 import org.compiere.model.MCashLine;
+import org.compiere.model.MConversionRate;
 import org.compiere.model.MCurrency;
 import org.compiere.model.MDocType;
 import org.compiere.model.MInOut;
@@ -66,6 +70,9 @@ import org.compiere.model.MWarehouse;
 import org.compiere.model.Query;
 import org.compiere.model.X_C_Order;
 import org.compiere.process.DocAction;
+import org.compiere.process.InOutGenerate;
+import org.compiere.process.InOutGenerateAbstract;
+import org.compiere.process.InvoiceGenerate;
 import org.compiere.process.ProcessInfo;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
@@ -74,6 +81,7 @@ import org.compiere.util.Env;
 import org.compiere.util.Msg;
 import org.compiere.util.Trx;
 import org.compiere.util.TrxRunnable;
+import org.compiere.util.Util;
 import org.compiere.util.ValueNamePair;
 import org.eevolution.service.dsl.ProcessBuilder;
 
@@ -141,16 +149,18 @@ public class CPOS {
 	/**	Date Format				*/
 	private SimpleDateFormat	dateFormat;
 	/**	Window No				*/
-	private int 							windowNo;
+	private int 				windowNo;
+	/**	Payment Amount			*/
+	private HashMap<Integer, BigDecimal> receivedAmount;
 	
 	/**
 	 * 	Set MPOS
-	 * @param salesRepId
+	 * @param salesRepresentativeId
 	 * @return true if found/set
 	 */
-	public void setPOS(int salesRepId) {
+	public void setPOS(int salesRepresentativeId) {
 		//List<MPOS> poss = getPOSs(p_SalesRep_ID);
-		List<MPOS> poss = getPOSByOrganization(Env.getAD_Org_ID(getCtx()));
+		List<MPOS> poss = getPOSBySalesRepresentativeAndOrganization(salesRepresentativeId, Env.getAD_Org_ID(getCtx()));
 		//
 		if (poss.size() == 0) {
 			throw new AdempierePOSException("@NoPOSForUser@");
@@ -366,6 +376,18 @@ public class CPOS {
 	}
 	
 	/**
+	 * Pre-Invoiced Order
+	 * @return
+	 */
+	public boolean isPreInvoicedOrder() {
+		if(!hasOrder()) {
+			return false;
+		}
+		//	
+		return MOrder.DocSubTypeSO_InvoiceOrder.equals(getDocSubTypeSO());
+	}
+	
+	/**
 	 * Validate if is Prepay Order
 	 * @return
 	 * @return boolean
@@ -558,7 +580,9 @@ public class CPOS {
 	 */
 	public String getBPName() {
 		if (hasBPartner())
-			return partner.getName();
+			return partner.getValue() 
+					+ " - " + partner.getName() 
+					+ (!Util.isEmpty(partner.getName2())? " " + partner.getName2(): "s");
 		return null;
 	}
 	
@@ -615,8 +639,7 @@ public class CPOS {
 	 * @return String
 	 */
 	public String getSalesRepName() {
-		if (currentOrder != null && currentOrder.getC_BPartner().getSalesRep_ID() !=0)
-		{
+		if (currentOrder != null && currentOrder.getC_BPartner().getSalesRep_ID() !=0) {
 			String salesRepName = currentOrder.getC_BPartner().getSalesRep().getName();
 			return salesRepName;
 		}
@@ -820,6 +843,9 @@ public class CPOS {
 		if (partner == null || partner.get_ID() == 0) {
 			throw new AdempierePOSException("POS.NoBPartnerForOrder");
 		} else {
+			if(currentOrder == null) {
+				newOrder(partnerId);
+			}
 			log.info("CPOS.SetC_BPartner_ID -" + partner);
 			currentOrder.setBPartner(partner);
 			//	
@@ -838,25 +864,32 @@ public class CPOS {
 					currentOrder.setPaymentRule(MOrder.PAYMENTRULE_Cash);
 			}
 			//	Set Sales Representative
-			if (currentOrder.getC_BPartner().getSalesRep_ID()!=0)
+			if(entityPOS.isSharedPOS()) {
+				currentOrder.setSalesRep_ID(Env.getAD_User_ID(getCtx()));
+			} else if (currentOrder.getC_BPartner().getSalesRep_ID() != 0) {
 				currentOrder.setSalesRep_ID(currentOrder.getC_BPartner().getSalesRep_ID());
-			else
+			} else {
 				currentOrder.setSalesRep_ID(entityPOS.getSalesRep_ID());
+			}
 			//	Save Header
 			currentOrder.saveEx();
 			//	Load Price List Version
 			MPriceListVersion priceListVersion = loadPriceListVersion(currentOrder.getM_PriceList_ID());
-			MProductPrice[] productPrices = priceListVersion.getProductPrice("AND EXISTS("
+			List<MProductPrice> productPrices = Arrays.asList(priceListVersion.getProductPrice("AND EXISTS("
 					+ "SELECT 1 "
 					+ "FROM C_OrderLine ol "
 					+ "WHERE ol.C_Order_ID = " + currentOrder.getC_Order_ID() + " "
-					+ "AND ol.M_Product_ID = M_ProductPrice.M_Product_ID)");
+					+ "AND ol.M_Product_ID = M_ProductPrice.M_Product_ID)"));
 			//	Update Lines
 			MOrderLine[] lines = currentOrder.getLines();
 			//	Delete if not exist in price list
 			for (MOrderLine line : lines) {
 				//	Verify if exist
-				if(existInPriceList(line.getM_Product_ID(), productPrices)) {
+				if(productPrices
+					.stream()
+					.filter(productPrice -> productPrice.getM_Product_ID() == line.getM_Product_ID())
+					.findFirst()
+					.isPresent()) {
 					line.setC_BPartner_ID(partner.getC_BPartner_ID());
 					line.setC_BPartner_Location_ID(currentOrder.getC_BPartner_Location_ID());
 					line.setPrice();
@@ -868,22 +901,6 @@ public class CPOS {
 			}
 		}
 	}
-	
-	/**
-	 * Verify if exist in price list
-	 * @param productId
-	 * @param productPrices
-	 * @return boolean
-	 */
-	private boolean existInPriceList(int productId, MProductPrice[] productPrices) {
-		for(MProductPrice productPrice : productPrices) {
-			if(productId == productPrice.getM_Product_ID()) {
-				return true;
-			}
-		}
-		//	Default Return
-		return false;
-	}
 
 	/**
 	 * 	Get POSs for specific Sales Rep or all
@@ -891,6 +908,16 @@ public class CPOS {
 	 */
 	public List<MPOS> getPOSByOrganization (int orgId) {
 		return MPOS.getByOrganization(ctx, orgId, null);
+	}
+	
+	/**
+	 * Get POS by Sales Representative and Organization
+	 * @param salesRepresentativeId
+	 * @param organizationId
+	 * @return
+	 */
+	public List<MPOS> getPOSBySalesRepresentativeAndOrganization(int salesRepresentativeId, int organizationId) {
+		return MPOS.getBySalesRepresentativeAndOrganization(getCtx(), organizationId, salesRepresentativeId, null);
 	}
 
 	/**************************************************************************
@@ -921,7 +948,7 @@ public class CPOS {
 	 * @param priceEntered
 	 * @param priceList
      * @param discountPercentage
-	 * @return
+	 * @return BigDecimal[] {lineNetAmt, taxRate, grandTotal}
      */
 	public BigDecimal [] updateLine(int orderLineId,
 									BigDecimal qtyOrdered,
@@ -942,11 +969,12 @@ public class CPOS {
 			//	Valid No changes
 			if(qtyOrdered.compareTo(orderLine.getQtyOrdered()) == 0
 			&& priceEntered.compareTo(orderLine.getPriceEntered()) == 0
+			&& discountPercentage != null 
 			&& discountPercentage.compareTo(orderLine.getDiscount()) == 0 ) {
 				return null;
 			}
 
-			if (discountPercentage.compareTo(orderLine.getDiscount()) != 0) {
+			if (discountPercentage != null && discountPercentage.compareTo(orderLine.getDiscount()) != 0) {
 				BigDecimal discountAmount = orderLine.getPriceList().multiply(discountPercentage.divide(Env.ONEHUNDRED));
 				priceEntered = orderLine.getPriceList().subtract(discountAmount);
 			}
@@ -1147,26 +1175,10 @@ public class CPOS {
 					+ "AND o.C_POS_ID = ? "
 					+ "AND o.SalesRep_ID = ? "
 					+ "ORDER BY o.Updated");
-		PreparedStatement preparedStatement = null;
-		ResultSet resultSet = null;
 		orderList = new ArrayList<Integer>();
-		try {
-			//	Set Parameter
-			preparedStatement= DB.prepareStatement(sql, null);
-			preparedStatement.setInt (1, Env.getAD_Client_ID(Env.getCtx()));
-			preparedStatement.setInt (2, getC_POS_ID());
-			preparedStatement.setInt (3, getSalesRep_ID());
-			//	Execute
-			resultSet = preparedStatement.executeQuery();
-			//	Add to List
-			while(resultSet.next()){
-				orderList.add(resultSet.getInt(1));
-			}
-		} catch(Exception e) {
-			log.severe("SubOrder.listOrder: " + e + " -> " + sql);
-		} finally {
-			DB.close(resultSet);
-			DB.close(preparedStatement);
+		int[] orderIds = DB.getIDsEx(null, sql, Env.getAD_Client_ID(Env.getCtx()), getC_POS_ID(), getSalesRep_ID());
+		for(int orderId : orderIds) {
+			orderList.add(orderId);
 		}
 		//	Seek Position
 		if(hasRecord())
@@ -1282,6 +1294,8 @@ public class CPOS {
 				currentOrder.setDocStatus(MOrder.STATUS_InProgress);
 			//	Set Document Action
 			currentOrder.setDocAction(DocAction.ACTION_Complete);
+			currentOrder.setC_POS_ID(getC_POS_ID());
+			currentOrder.saveEx();
 			if (currentOrder.processIt(DocAction.ACTION_Complete)) {
 				currentOrder.saveEx();
 				orderCompleted = true;
@@ -1292,9 +1306,12 @@ public class CPOS {
 				return orderCompleted;
 			}
 		}
-
+		//	Load after process
+		reloadOrder();
 		//	Validate for Invoice and Shipment generation (not for Standard Orders)
-		if(isPaid && !isStandardOrder()) {
+		if(isPaid 
+				&& !isStandardOrder() 
+				&& !isPreInvoicedOrder()) {
 			if(!isDelivered()) // Based on Delivery Rule of POS Terminal or partner
 				generateShipment(trxName);
 
@@ -1320,7 +1337,7 @@ public class CPOS {
 		//Generate Return using InOutGenerate
 		ProcessInfo processInfo = ProcessBuilder
 				.create(getCtx())
-				.process(199)
+				.process(InOutGenerateAbstract.getProcessId())
 				.withTitle(Msg.parseTranslation(getCtx(), "@InOutGenerateGen@"))
 				.withParameter(MInOut.COLUMNNAME_M_Warehouse_ID, getM_Warehouse_ID())
 				.withParameter("Selection", true)
@@ -1379,7 +1396,7 @@ public class CPOS {
         //Generate Return using InOutGenerate
         ProcessInfo processInfo = ProcessBuilder
                 .create(getCtx())
-                .process(199)
+                .process(InOutGenerate.getProcessId())
                 .withParameter(MOrder.COLUMNNAME_M_Warehouse_ID, getM_Warehouse_ID())
                 .withParameter("Selection", true)
                 .withSelectedRecordsIds(MOrder.Table_ID , selectionIds)
@@ -1411,7 +1428,7 @@ public class CPOS {
                //Generate Credit note InvoiceGenerate
                processInfo = ProcessBuilder
                        .create(getCtx())
-                       .process(134)
+                       .process(InvoiceGenerate.getProcessId())
                        .withTitle(processInfo.getTitle())
                        .withParameter("Selection", true)
                        .withSelectedRecordsIds(MOrder.Table_ID , selectionIds)
@@ -1467,7 +1484,7 @@ public class CPOS {
 		//Generate InvoiceGenerate
 		ProcessInfo processInfo = ProcessBuilder
 				.create(getCtx())
-				.process(134)
+				.process(InvoiceGenerate.getProcessId())
 				.withTitle(Msg.parseTranslation(getCtx(), "@InvGenerateGen@"))
 				.withParameter("Selection", true)
 				.withParameter(MInvoice.COLUMNNAME_DocAction, DocAction.ACTION_Complete)
@@ -1597,11 +1614,46 @@ public class CPOS {
      */
 	public BigDecimal getAmountReceived()
 	{
-		BigDecimal totalPayAmt = Env.ZERO;
-		for (MPayment payment : MPayment.getOfOrder(getOrder()))
-			totalPayAmt = totalPayAmt.add(payment.getPayAmt());
-
-		return totalPayAmt;
+		int orderId = getOrder().getC_Order_ID();
+		//	Calculate
+		if(receivedAmount == null) {
+			receivedAmount = new HashMap<Integer, BigDecimal>();
+		}
+		if(receivedAmount.get(orderId) == null) {
+			AtomicReference<BigDecimal> amount = new AtomicReference<>(Env.ZERO);
+			MPayment.getOfOrder(getOrder()).forEach(payment -> amount.updateAndGet(amountToUpdate -> amountToUpdate.add(
+					getConvertedPaymentAmount(payment.getPayAmt(), payment.getC_Currency_ID(), payment.getDateTrx())))
+			);
+			receivedAmount.put(orderId, amount.get());
+		}
+		return receivedAmount.get(orderId);
+	}
+	
+	/**
+	 * Get converted payment amount to currency document
+	 * @return
+	 */
+	private BigDecimal getConvertedPaymentAmount(BigDecimal paymentAmount, int currencyId, Timestamp transactionDate) {
+		if(getC_Currency_ID() <= 0
+				|| currencyId <= 0
+				|| getOrder().getC_Currency_ID() <= 0) {
+			return paymentAmount;
+		}
+		//	
+		BigDecimal currencyRate = MConversionRate.getRate(
+				currencyId,
+				getC_Currency_ID(), 
+				transactionDate, 
+				getM_POS().getC_ConversionType_ID(), 
+				getOrder().getAD_Client_ID(), 
+				getOrder().getAD_Org_ID());
+		if (currencyRate == null || currencyRate.compareTo(Env.ZERO) == 0) {
+			currencyRate = Env.ONE;
+		}
+		MCurrency currency = MCurrency.get(getCtx(), getC_Currency_ID());
+		//	Payment amount
+		return paymentAmount.multiply(currencyRate, MathContext.DECIMAL128)
+				.setScale(currency.getStdPrecision (), BigDecimal.ROUND_HALF_UP);
 	}
 
 	/**
@@ -1695,6 +1747,14 @@ public class CPOS {
 		currentOrder.load(currentOrder.get_TrxName());
 		currentOrder.getLines(true, "Line");
 		partner = MBPartner.get(getCtx(), currentOrder.getC_BPartner_ID());
+		clearValues();
+	}
+	
+	/**
+	 * Clear cache values
+	 */
+	private void clearValues() {
+		receivedAmount = null;
 	}
 	
 	/**
@@ -2263,7 +2323,7 @@ public class CPOS {
 	 * @return String
 	 */
 	public String getProductValue(int productId) {
-		return DB.getSQLValueString(null, "SELECT Value FROM M_Product WHERE M_Product_ID = ? " , productId);
+		return MProduct.get(getCtx(), productId).getValue();
 	}
 
 	/**
@@ -2273,11 +2333,12 @@ public class CPOS {
 	 * @return String
 	 */
 	public String getProductName(int productId) {
-		return DB.getSQLValueString(null, "SELECT name FROM M_Product WHERE M_Product_ID = ? " , productId);
+		return MProduct.get(getCtx(), productId).getName();
 	}
 
 	/**
 	 * Get Query for Product
+	 * @param referenceProductId specific product ID
 	 * @param productCode
 	 * @param warehouseId
 	 * @param priceListId
@@ -2285,7 +2346,7 @@ public class CPOS {
 	 * @return
 	 * @return List<Vector<Object>>
 	 */
-	public static List<Vector<Object>> getQueryProduct(String productCode, int warehouseId , int priceListId , int partnerId) {
+	public static List<Vector<Object>> getQueryProduct(int referenceProductId, String productCode, int warehouseId , int priceListId , int partnerId) {
 		ArrayList<Vector<Object>> rows = new ArrayList<>();
 		StringBuilder sql = new StringBuilder();
 		sql.append("SELECT DISTINCT ON ( ProductPricing.M_Product_ID , p.Value, p.Name ) ProductPricing.M_Product_ID , p.Value, p.Name,")
@@ -2319,13 +2380,17 @@ public class CPOS {
 					sql.append( "AND ProductPricing.C_BPartner_ID IS NULL ");
 
 				sql.append("AND p.AD_Client_ID=? AND p.IsSold=? AND p.Discontinued=? ")
-				.append("AND ")
-				.append("(")
-				.append("UPPER(p.Name)  LIKE UPPER('").append("%").append(productCode.replace(" ","%")).append("%").append("')")
-				.append(" OR UPPER(p.Value) LIKE UPPER('").append("%").append(productCode.replace(" ","%")).append("%").append("')")
-				.append(" OR UPPER(p.UPC)   LIKE UPPER('").append("%").append(productCode.replace(" ","%")).append("%").append("')")
-				.append(" OR UPPER(p.SKU)   LIKE UPPER('").append("%").append(productCode.replace(" ","%")).append("%").append("')")
-				.append(")");
+				.append("AND ");
+				//	Validate only specific product
+				if(referenceProductId > 0) {
+					sql.append("p.M_Product_ID = ").append(referenceProductId);
+				} else {
+					sql.append("(").append("UPPER(p.Name)  LIKE UPPER('").append("%").append(productCode.replace(" ","%")).append("%").append("')")
+					.append(" OR UPPER(p.Value) LIKE UPPER('").append("%").append(productCode.replace(" ","%")).append("%").append("')")
+					.append(" OR UPPER(p.UPC)   LIKE UPPER('").append("%").append(productCode.replace(" ","%")).append("%").append("')")
+					.append(" OR UPPER(p.SKU)   LIKE UPPER('").append("%").append(productCode.replace(" ","%")).append("%").append("')")
+					.append(")");
+				}
 		PreparedStatement statement = null;
 		try{
 			statement = DB.prepareStatement(sql.toString(), null);
@@ -2349,21 +2414,21 @@ public class CPOS {
 			statement.setString(count, "N");
 
 			ResultSet resultSet = statement.executeQuery();
-
+			DecimalFormat format = DisplayType.getNumberFormat(DisplayType.Amount);
 			while (resultSet.next()) {
 				Vector<Object> columns = new Vector<>();
 				Integer productId = resultSet.getInt(1);
 				String  productValue = resultSet.getString(2).trim();
 				String  productName = resultSet.getString(3).trim();
-				String  qtyAvailable = resultSet.getBigDecimal(4) != null ? resultSet.getBigDecimal(4).toString().trim() : "0";
-				String  priceStd = resultSet.getBigDecimal(5) != null ? resultSet.getBigDecimal(5).setScale(2, BigDecimal.ROUND_UP).toString().trim() :  "0";
-				String  priceList = resultSet.getBigDecimal(6) != null ? resultSet.getBigDecimal(6).setScale(2, BigDecimal.ROUND_UP).toString().trim() : "0 ";
+				BigDecimal  qtyAvailable = resultSet.getBigDecimal(4) != null ? resultSet.getBigDecimal(4) : Env.ZERO;
+				BigDecimal  priceStd = resultSet.getBigDecimal(5) != null ? resultSet.getBigDecimal(5) :  Env.ZERO;
+				BigDecimal  priceList = resultSet.getBigDecimal(6) != null ? resultSet.getBigDecimal(6) : Env.ZERO;
 				columns.add(productId);
 				columns.add(productValue);
 				columns.add(productName);
-				columns.add(qtyAvailable);
-				columns.add(priceStd);
-				columns.add(priceList);
+				columns.add(format.format(qtyAvailable));
+				columns.add(format.format(priceStd));
+				columns.add(format.format(priceList));
 				rows.add(columns);
 			}
 

@@ -22,6 +22,9 @@ import java.util.Optional;
 import java.util.Vector;
 
 import org.adempiere.exceptions.AdempiereException;
+import org.adempiere.pos.command.CommandCompleteDocument;
+import org.adempiere.pos.command.CommandManager;
+import org.adempiere.pos.command.CommandReceiver;
 import org.adempiere.pos.search.WQueryBPartner;
 import org.adempiere.pos.search.WQueryDocType;
 import org.adempiere.pos.search.WQueryOrderHistory;
@@ -39,6 +42,7 @@ import org.adempiere.webui.component.Rows;
 import org.adempiere.webui.panel.InfoProductPanel;
 import org.adempiere.webui.window.FDialog;
 import org.compiere.model.MPOSKey;
+import org.compiere.model.MProduct;
 import org.compiere.util.CLogger;
 import org.compiere.util.Env;
 import org.compiere.util.Msg;
@@ -273,9 +277,8 @@ public class WPOSActionPanel extends WPOSSubPanel
 	public void onEvent(Event e) throws Exception {
 		try {
             if(e.getName().equals(Events.ON_CHANGE)){
-                if(lookupProduct.getSelectedRecord() >= 0) {
-                  lookupProduct.setText(String.valueOf(lookupProduct.getSelectedRecord()));
-                    lookupProduct.captureProduct();
+                if(lookupProduct.getSelectedProductId() >= 0) {
+                	lookupProduct.captureProduct();
                 }
             }
 
@@ -337,7 +340,7 @@ public class WPOSActionPanel extends WPOSSubPanel
                     if(posPanel.isDrafted() || posPanel.isInProgress())  {
                         isKeyboard = true;
                         if(!fieldProductName.showKeyboard()){
-                            findProduct(true);
+                            findProduct(true, lookupProduct.getSelectedProductId());
                         }
                         fieldProductName.setFocus(true);
                     }
@@ -365,7 +368,8 @@ public class WPOSActionPanel extends WPOSSubPanel
 			}
             else if(e.getTarget().equals(buttonCollect)){
             	if(posPanel.isReturnMaterial()) {
-					completeReturn();
+            		CommandReceiver commandReceiver = new CommandReceiver(null, CommandManager.COMPLETE_DOCUMENT, "@smenu.complete.prepared.order@");
+            		actionProcessMenu.executeCommand(new CommandCompleteDocument(CommandManager.COMPLETE_DOCUMENT, commandReceiver.getEvent()));
 				} else {
 					payOrder();
 				}
@@ -434,7 +438,8 @@ public class WPOSActionPanel extends WPOSSubPanel
 				fieldProductName.setText(value);
 				try {
 					posPanel.setAddQty(true);
-					findProduct(true);
+					lookupProduct.setText(MProduct.get(ctx, productId).getName());
+					//findProduct(true);
 				} catch (Exception exception) {
 					FDialog.error(0, this, exception.getLocalizedMessage());
 				}
@@ -460,7 +465,7 @@ public class WPOSActionPanel extends WPOSSubPanel
 	/**************************************************************************
 	 * 	Find/Set Product & Price
 	 */
-	public void findProduct(boolean editQty) throws Exception {
+	public void findProduct(boolean editQty, int productId) throws Exception {
 		if (getProductTimer() != null)
 			getProductTimer().stop();
 		String query;
@@ -477,13 +482,12 @@ public class WPOSActionPanel extends WPOSSubPanel
 			Integer.getInteger(query);
 		} catch (Exception e) {}
 		//	
-		List<Vector<Object>> results = CPOS.getQueryProduct(query, posPanel.getM_Warehouse_ID(), 
+		List<Vector<Object>> results = CPOS.getQueryProduct(productId, query, posPanel.getM_Warehouse_ID(), 
 				posPanel.getM_PriceList_ID() , posPanel.getC_BPartner_ID());
 		//	Set Result
 		if (results.size() == 1) {
 			Optional<Vector<Object>> columns = results.stream().findFirst();
 			if (columns.isPresent()) {
-				Integer productId = (Integer) columns.get().elementAt(0);
 				String productName = (String) columns.get().elementAt(2);
 				posPanel.setAddQty(true);
 				posPanel.addOrUpdateLine(productId, editQty? Env.ZERO: Env.ONE);
@@ -518,32 +522,6 @@ public class WPOSActionPanel extends WPOSSubPanel
 	 */
 	public void nextRecord() {
 		posPanel.nextRecord();
-		posPanel.refreshPanel();
-	}
-	
-	/**
-	 * Complete Return Material
-	 */
-	private void completeReturn() {
-		String errorMsg = null;
-		String askMsg = "@new.customer.return.order@ @DisplayDocumentInfo@ : " + posPanel.getDocumentNo()
-                + " @To@ @C_BPartner_ID@ : " + posPanel.getBPName();
-		//	
-		if (posPanel.isCompleted()) {
-			return;
-		}
-		//	Show Ask
-		if (FDialog.ask(posPanel.getWindowNo(), this, "StartProcess?", Msg.parseTranslation(posPanel.getCtx(), askMsg))) {
-			try {
-				posPanel.completeReturn();
-			} catch(Exception e) {
-				errorMsg = e.getLocalizedMessage();
-			}
-		}
-		//	show if exists error
-		if(errorMsg != null)
-			FDialog.error(posPanel.getWindowNo(), Msg.parseTranslation(ctx, errorMsg));
-		//	Update
 		posPanel.refreshPanel();
 	}
 

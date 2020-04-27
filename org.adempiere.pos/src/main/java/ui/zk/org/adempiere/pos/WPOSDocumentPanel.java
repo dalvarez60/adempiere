@@ -322,18 +322,20 @@ public class WPOSDocumentPanel extends WPOSSubPanel implements POSKeyListener, P
 	@Override
 	public void onEvent(Event e) throws Exception {
 		//	Name
-		if(e.getTarget().equals(bPartnerName.getComponent(WPOSTextField.SECONDARY)) && e.getName().equals(Events.ON_FOCUS) && !isKeyboard){
+		if(e.getName().equals(Events.ON_FOCUS)) {
+			bPartnerName.setFocus(true);
+			bPartnerName.selectText();
+		} else if(e.getTarget().equals(bPartnerName.getComponent(WPOSTextField.PRIMARY)) && e.getName().equals(Events.ON_OK) && !isKeyboard){
 			isKeyboard = true;
 			if(!bPartnerName.showKeyboard()){
 				findBPartner();
-			}
-			if(posPanel.getKeyboard() == null){
+			} else if(posPanel.getKeyboard() == null){
 				bPartnerName.setValue(" ");
 				findBPartner();
 			}
 			bPartnerName.setFocus(true);
 		}
-		if(e.getTarget().equals(bPartnerName.getComponent(WPOSTextField.PRIMARY)) && e.getName().equals(Events.ON_FOCUS)){
+		if(e.getTarget().equals(bPartnerName.getComponent(WPOSTextField.PRIMARY)) && e.getName().equals(Events.ON_OK)){
 			isKeyboard = false;
 		}
 	}
@@ -367,6 +369,7 @@ public class WPOSDocumentPanel extends WPOSSubPanel implements POSKeyListener, P
 		} catch (Exception e) {
 			allNumber = false;
 		}
+		query = "%" + query + "%";
 		String value = query;
 		String taxId = query;
 		String name = (allNumber ? null : query);
