@@ -2349,7 +2349,7 @@ public class CPOS {
 	public static List<Vector<Object>> getQueryProduct(int referenceProductId, String productCode, int warehouseId , int priceListId , int partnerId) {
 		ArrayList<Vector<Object>> rows = new ArrayList<>();
 		StringBuilder sql = new StringBuilder();
-		sql.append("SELECT DISTINCT ON ( ProductPricing.M_Product_ID , p.Value, p.Name ) ProductPricing.M_Product_ID , p.Value, p.Name,")
+		sql.append("SELECT DISTINCT ON ( ProductPricing.M_Product_ID , p.Value, p.Name, p.UPC) ProductPricing.M_Product_ID , p.Value, p.Name, coalesce(p.UPC, '') AS UPC, ")
 				.append("   BomQtyAvailable(ProductPricing.M_Product_ID, ? , 0 ) AS QtyAvailable , PriceStd , PriceList")
 					.append(" FROM M_Product p INNER JOIN (")
 					.append("	SELECT pl.M_PriceList_ID , plv.ValidFrom , 0 AS BreakValue , null AS C_BPartner_ID,")
@@ -2417,15 +2417,17 @@ public class CPOS {
 			DecimalFormat format = DisplayType.getNumberFormat(DisplayType.Amount);
 			while (resultSet.next()) {
 				Vector<Object> columns = new Vector<>();
-				Integer productId = resultSet.getInt(1);
-				String  productValue = resultSet.getString(2).trim();
-				String  productName = resultSet.getString(3).trim();
-				BigDecimal  qtyAvailable = resultSet.getBigDecimal(4) != null ? resultSet.getBigDecimal(4) : Env.ZERO;
-				BigDecimal  priceStd = resultSet.getBigDecimal(5) != null ? resultSet.getBigDecimal(5) :  Env.ZERO;
-				BigDecimal  priceList = resultSet.getBigDecimal(6) != null ? resultSet.getBigDecimal(6) : Env.ZERO;
+				Integer productId = resultSet.getInt("M_Product_ID");
+				String  productValue = resultSet.getString("Value").trim();
+				String  productName = resultSet.getString("Name").trim();
+				String upc = resultSet.getString("UPC").trim();
+				BigDecimal  qtyAvailable = resultSet.getBigDecimal("QtyAvailable") != null ? resultSet.getBigDecimal("QtyAvailable") : Env.ZERO;
+				BigDecimal  priceStd = resultSet.getBigDecimal("PriceStd") != null ? resultSet.getBigDecimal("PriceStd") :  Env.ZERO;
+				BigDecimal  priceList = resultSet.getBigDecimal("PriceList") != null ? resultSet.getBigDecimal("PriceList") : Env.ZERO;
 				columns.add(productId);
 				columns.add(productValue);
 				columns.add(productName);
+				columns.add(upc);
 				columns.add(format.format(qtyAvailable));
 				columns.add(format.format(priceStd));
 				columns.add(format.format(priceList));
