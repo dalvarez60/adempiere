@@ -53,11 +53,13 @@ public class WPOSLookupProduct extends AutoComplete implements EventListener {
     private Integer partnerId = 0;
     static private Integer PRODUCT_VALUE_LENGTH = 14;
     static private Integer PRODUCT_NAME_LENGTH = 50;
+    static private Integer PRODUCT_UPC_LENGTH = 14;
     static private Integer QUANTITY_LENGTH = 16;
 
     private String separator = "|";
     private String productValueTitle   = String.format("%1$-" + PRODUCT_VALUE_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@ProductValue@"));
     private String productTitle        = String.format("%1$-" + PRODUCT_NAME_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@M_Product_ID@"));
+    private String productUPCTitle        = String.format("%1$-" + PRODUCT_UPC_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@UPC@"));
     private String availableTitle      = String.format("%1$" + QUANTITY_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@QtyAvailable@"));
     private String priceStdTitle       = String.format("%1$" + QUANTITY_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@PriceStd@"));
     private String priceListTile       = String.format("%1$" + QUANTITY_LENGTH + "s", Msg.parseTranslation(Env.getCtx() , "@PriceList@"));
@@ -91,6 +93,7 @@ public class WPOSLookupProduct extends AutoComplete implements EventListener {
         this.title = new StringBuffer()
                 .append(productValueTitle).append(separator)
                 .append(productTitle).append(separator)
+                .append(productUPCTitle).append(separator)
                 .append(availableTitle).append(separator)
                 .append(priceStdTitle).append(separator)
                 .append(priceListTile).toString();
@@ -197,12 +200,14 @@ public class WPOSLookupProduct extends AutoComplete implements EventListener {
             
             String productValue = (String)columns.elementAt(1);
             String productName = (String)columns.elementAt(2);
-            String qtyAvailable = (String)columns.elementAt(3);
-            String priceStd =  (String)columns.elementAt(4);
-            String priceList = (String)columns.elementAt(5);
+            String productUPC = (String)columns.elementAt(3);
+            String qtyAvailable = (String)columns.elementAt(4);
+            String priceStd =  (String)columns.elementAt(5);
+            String priceList = (String)columns.elementAt(6);
             StringBuilder lineString = new StringBuilder();
             lineString.append(String.format("%1$-" + PRODUCT_VALUE_LENGTH + "s", productValue)).append(separator)
               .append(String.format("%1$-" + PRODUCT_NAME_LENGTH + "s", productName)).append(separator)
+              .append(String.format("%1$-" + PRODUCT_UPC_LENGTH + "s", productUPC)).append(separator)
               .append(String.format("%1$" + QUANTITY_LENGTH + "s", qtyAvailable)).append(separator)
               .append(String.format("%1$" + QUANTITY_LENGTH + "s", priceStd)).append(separator)
               .append(String.format("%1$" + QUANTITY_LENGTH + "s", priceList));
